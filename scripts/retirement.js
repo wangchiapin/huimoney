@@ -20,7 +20,7 @@ function retirementDefaults() {
     crashDrop: 25,           // 股災情境：股票市值下跌 %
     stockMode: 'manual',     // 'auto' 自動帶入持股現值 | 'manual' 手動輸入
     stockManual: 100,        // 萬元
-    includeLent: false,      // 自動帶入時，出借中的股票是否另外加算
+    includeLent: true,       // 自動帶入時，出借中的股票是否另外加算
     dcaMode: 'manual',       // 'auto' | 'manual'
     dcaManual: 1.5,          // 萬元 / 月
     stockReturn: 8,          // 股票年化報酬 %
@@ -276,7 +276,7 @@ function renderRetirementSettings() {
         </div>
         ${st.stockMode === 'auto'
           ? `<div class="ret-hint">${stockAutoInfo}</div>
-             <label class="ret-check"><input type="checkbox" ${st.includeLent ? 'checked' : ''} onchange="retSetCheck('includeLent', this.checked)"> 出借中的股票再另外加算<br><small>（如果你的「持有股數」已經包含出借的股數，請不要勾，避免重複計算）</small></label>`
+             <label class="ret-check"><input type="checkbox" ${st.includeLent ? 'checked' : ''} onchange="retSetCheck('includeLent', this.checked)"> 出借中的股票再另外加算<br><small>（若你的「持有股數」本來就已包含出借的股數，請取消勾選，避免重複計算）</small></label>`
           : `<label class="ret-field"><span>現值（萬元）</span><input type="number" step="any" class="ret-input" value="${esc(st.stockManual)}" oninput="retSetNum('stockManual', this.value)"></label>`}
 
         <div class="ret-sub">每月定期定額</div>
