@@ -36,3 +36,5 @@
 .ret-detail th:first-child, .ret-detail td:first-child { text-align: center; }
 .ret-detail thead th { position: sticky; top: 0; z-index: 2; }
 .ret-detail tr.ret-hl td { background: #f3ecd8; font-weight: 600; }
+.ret-growth-cell { min-width: 170px; }
+.ret-growth-cell select { margin-bottom: 4px; }

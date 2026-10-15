@@ -28,8 +28,8 @@ function retirementDefaults() {
     yieldMode: 'manual',     // 'manual' | 'actual' 過去一年實際領到 | 'estimate' 年度預估股利
     yieldManual: 5.5,        // %
     accounts: [
-      { id: 'acc_demo_1', name: '退休專戶 A（範例）', balance: 50, yearlyAdd: 10, rate: 5, growth: 0, stopAge: 0, pension: 0 },
-      { id: 'acc_demo_2', name: '退休專戶 B（範例）', balance: 30, yearlyAdd: 0, rate: 4, growth: 0, stopAge: 0, pension: 0 }
+      { id: 'acc_demo_1', name: '退休專戶 A（範例）', balance: 50, yearlyAdd: 10, rate: 5, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 },
+      { id: 'acc_demo_2', name: '退休專戶 B（範例）', balance: 30, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 }
     ]
   };
 }
@@ -60,7 +60,9 @@ function retirementSanitize(raw) {
       balance: num(a && a.balance, 0),
       yearlyAdd: num(a && a.yearlyAdd, 0),
       rate: num(a && a.rate, 0),
+      growthMode: (a && a.growthMode === 'fixed') ? 'fixed' : 'pct',
       growth: num(a && a.growth, 0),
+      capAdd: Math.max(0, num(a && a.capAdd, 0)),
       stopAge: Math.max(0, num(a && a.stopAge, 0)),
       pension: Math.max(0, num(a && a.pension, 0))
     }));
@@ -200,8 +202,11 @@ function retirementCompute(st, auto) {
       st.accounts.forEach((a, i) => {
         const ar = a.rate / 100;
         // 這一年有沒有新增：沒設停止年齡＝一直新增；有設＝到那個年齡為止
-        const adds = (!a.stopAge || (st.curAge + n) <= a.stopAge)
-          ? a.yearlyAdd * Math.pow(1 + (a.growth || 0) / 100, n - 1) : 0;
+        let adds = a.growthMode === 'fixed'
+          ? a.yearlyAdd + (a.growth || 0) * (n - 1)                    // 每年固定多加同樣的金額（萬）
+          : a.yearlyAdd * Math.pow(1 + (a.growth || 0) / 100, n - 1);  // 每年成長幾 %
+        if (a.capAdd > 0) adds = Math.min(adds, a.capAdd);             // 到上限就不再增加
+        if (a.stopAge && (st.curAge + n) > a.stopAge) adds = 0;        // 超過停止年齡不再新增
         accNow[i] = accNow[i] * (1 + ar) + adds * (1 + (mid ? ar / 2 : 0));
       });
     }
@@ -269,7 +274,9 @@ function renderRetirementSettings() {
       <td><input type="number" step="any" class="ret-input" value="${esc(a.balance)}" oninput="retSetAccount(${i}, 'balance', this.value)"></td>
       <td><input type="number" step="any" class="ret-input" value="${esc(a.yearlyAdd)}" oninput="retSetAccount(${i}, 'yearlyAdd', this.value)"></td>
       <td><input type="number" step="0.1" class="ret-input" value="${esc(a.rate)}" oninput="retSetAccount(${i}, 'rate', this.value)"></td>
-      <td><input type="number" step="0.1" class="ret-input" value="${esc(a.growth)}" oninput="retSetAccount(${i}, 'growth', this.value)"></td>
+      <td class="ret-growth-cell"><select class="ret-input" onchange="retSetAccountMode(${i}, this.value)"><option value="pct" ${a.growthMode === 'pct' ? 'selected' : ''}>每年成長 %</option><option value="fixed" ${a.growthMode === 'fixed' ? 'selected' : ''}>每年固定增加（萬）</option></select>
+        <input type="number" step="any" class="ret-input" value="${esc(a.growth)}" oninput="retSetAccount(${i}, 'growth', this.value)"></td>
+      <td><input type="number" step="any" class="ret-input" value="${esc(a.capAdd)}" oninput="retSetAccount(${i}, 'capAdd', this.value)"></td>
       <td><input type="number" step="1" class="ret-input" value="${esc(a.stopAge)}" oninput="retSetAccount(${i}, 'stopAge', this.value)"></td>
       <td><input type="number" step="any" class="ret-input" value="${esc(a.pension)}" oninput="retSetAccount(${i}, 'pension', this.value)"></td>
       <td><button class="btn-del" title="刪除這個專戶" onclick="retRemoveAccount(${i})">✕</button></td>
@@ -326,11 +333,11 @@ function renderRetirementSettings() {
       <h3>🏦 退休專戶 <small>（退撫基金、勞退、年金保險或其他長期存放的帳戶，可自行新增）</small></h3>
       <div class="ret-table-wrap">
         <table class="ret-table">
-          <thead><tr><th>名稱</th><th>目前餘額（萬）</th><th>每年新增（萬）</th><th>年化報酬（%）</th><th>每年新增金額成長（%）</th><th>新增到幾歲為止（0＝不限）</th><th>退休後每月另領（萬）</th><th></th></tr></thead>
-          <tbody>${accRows || '<tr><td colspan="8" class="ret-empty">還沒有專戶，按下面的按鈕新增</td></tr>'}</tbody>
+          <thead><tr><th>名稱</th><th>目前餘額（萬）</th><th>每年新增（萬）</th><th>年化報酬（%）</th><th>每年新增金額的增加方式</th><th>每年新增金額上限（萬，0＝不限）</th><th>新增到幾歲為止（0＝不限）</th><th>退休後每月另領（萬）</th><th></th></tr></thead>
+          <tbody>${accRows || '<tr><td colspan="9" class="ret-empty">還沒有專戶，按下面的按鈕新增</td></tr>'}</tbody>
         </table>
       </div>
-      <div class="ret-hint">「新增到幾歲為止」填 0 代表一直新增；例如填 59，就是 59 歲之後不再投入。「每年新增金額成長」可用來表示薪水調升帶來的提撥增加。「退休後每月另領」只用來顯示在摘要，不會算進資產。</div>
+      <div class="ret-hint">「新增到幾歲為止」填 0 代表一直新增；例如填 59，就是 59 歲之後不再投入。「每年新增金額的增加方式」可用來表示薪水調升帶來的提撥增加：選「成長 %」是每年多存上一年的幾 %；選「每年固定增加」是每年多存同樣的金額（萬）；若有「上限」，增加到上限就不再增加。「退休後每月另領」只用來顯示在摘要，不會算進資產。</div>
       <button class="btn btn-outline" onclick="retAddAccount()">➕ 新增專戶</button>
     </div>
   `;
@@ -354,8 +361,14 @@ function retSetAccount(i, field, value) {
   retTouch();
   updateRetirementResults();
 }
+function retSetAccountMode(i, mode) {
+  const a = retirementSettings.accounts[i];
+  if (!a) return;
+  a.growthMode = mode === 'fixed' ? 'fixed' : 'pct';
+  retTouch(); updateRetirementResults();
+}
 function retAddAccount() {
-  retirementSettings.accounts.push({ id: 'acc_' + Date.now(), name: '', balance: 0, yearlyAdd: 0, rate: 4, growth: 0, stopAge: 0, pension: 0 });
+  retirementSettings.accounts.push({ id: 'acc_' + Date.now(), name: '', balance: 0, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 });
   retTouch(); renderRetirement();
 }
 function retRemoveAccount(i) {
