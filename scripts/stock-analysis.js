@@ -107,7 +107,7 @@
       }
       return displayList.map(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
         const totalCost = (Number(s.totalCost) || 0) * fxRate;
         const shares = Number(s.shares) || 0;
         const currentPrice = (Number(s.currentPrice) || 0) * fxRate;
@@ -200,7 +200,7 @@
       const currentEntries = [];
       stocks.forEach(st => {
         const isUS = isUsStock(st);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
         let amt = 0;
         (st.dividendHistory || []).forEach(dh => {
           const key = normalizeYearKey(dh.year);

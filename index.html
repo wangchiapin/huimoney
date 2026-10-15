@@ -155,6 +155,8 @@
 
       <!-- 股票分析圖按鈕 (位於新增股票與計算機中間) -->
       <button class="btn btn-outline" id="btnStockAnalysis" onclick="openStockAnalysisModal()">📊 股票分析圖</button>
+      <!-- 讀取每天自動更新的收盤價與匯率（data/prices.json） -->
+      <button class="btn btn-outline" id="btnUpdatePrices" onclick="updatePricesFromFile()" title="用每天自動更新的收盤價與美元匯率更新「現價」">💹 更新股價與匯率</button>
 
       <!-- 計算機按鈕 (位於設定左邊) -->
       <button class="btn btn-calc" onclick="toggleCalculator()">🧮 計算機</button>
@@ -798,6 +800,7 @@
   <script src="scripts/stock-sales.js"></script>
   <script src="scripts/stock.js"></script>
   <script src="scripts/stock-analysis.js"></script>
+  <script src="scripts/prices.js"></script>
   <script src="scripts/insurance.js"></script>
   <script src="scripts/retirement.js"></script>
   <script src="scripts/export-excel.js"></script>

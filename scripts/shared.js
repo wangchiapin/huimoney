@@ -54,6 +54,17 @@
       return stock.account === '美股複委託' || stock.category === '美股';
     }
 
+    /* ====== 美元匯率：預設 29；有抓到 data/prices.json 的匯率就用抓到的（存在瀏覽器） ====== */
+    const USD_FX_KEY = 'USD_FX_V1';
+    function usdFx() {
+      try {
+        const v = JSON.parse(localStorage.getItem(USD_FX_KEY) || 'null');
+        const r = v && Number(v.rate);
+        if (r > 15 && r < 60) return r;
+      } catch (e) {}
+      return 29;
+    }
+
     /* ====== 共用小工具：手機數字鍵盤 (inputmode="decimal")
        整個 App 有很多地方各自用模板字串產生 <input type="number">（股票管理、財務總覽、
        股利、定期定額、借券...等好幾個檔案），逐一手動加屬性容易漏掉。

@@ -9,7 +9,7 @@
    ======================================================================== */
 
 const RETIREMENT_STORAGE_KEY = 'RETIREMENT_SETTINGS_V1';
-const RETIREMENT_FX_USD = 29; // 與股票管理其他地方一致：美股以 29 折算台幣
+
 
 function retirementDefaults() {
   return {
@@ -95,7 +95,7 @@ function retirementAutoData() {
     estimateAnnualDiv: 0, estimateMissing: 0, estimateStocks: 0
   };
   const list = (typeof stocks !== 'undefined' && Array.isArray(stocks)) ? stocks : [];
-  const fxOf = s => (typeof isUsStock === 'function' && isUsStock(s)) ? RETIREMENT_FX_USD : 1;
+  const fxOf = s => (typeof isUsStock === 'function' && isUsStock(s)) ? usdFx() : 1;
 
   list.forEach(s => {
     const fx = fxOf(s);

@@ -1,0 +1,12 @@
+# 要自動更新的美股代號，一行一個（用英文代號，例如 VOO）。想多追蹤哪一檔就加在這裡。
+VOO
+VTI
+QQQ
+SCHD
+VT
+AAPL
+MSFT
+NVDA
+GOOGL
+AMZN
+TSLA

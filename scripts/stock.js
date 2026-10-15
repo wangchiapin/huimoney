@@ -681,7 +681,7 @@
       stocks.forEach(st => {
         const p = Number(st.currentPrice) || 0;
         const isUS = isUsStock(st);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
 
         (st.dividendHistory || []).forEach(dh => {
           const key = normalizeYearKey(dh.year);
@@ -1304,7 +1304,7 @@
 
       tbody.innerHTML = displayList.map((s, rowIndex) => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
 
         const totalCost = (Number(s.totalCost) || 0) * fxRate;
         const shares = Number(s.shares) || 0;
@@ -1424,7 +1424,7 @@
       let totalCost = 0, totalVal = 0, totalDiv = 0, totalLent = 0;
       stocks.forEach(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
 
         const p = (Number(s.currentPrice) || 0) * fxRate;
         const cashD = (Number(s.cashDividends) || 0) * fxRate;
@@ -1630,7 +1630,7 @@
           uniqueStocksMap.forEach((us, key) => {
             const est = dividendEstimates[key] || { expCash: 0, expStock: 0 };
             const isUS = isUsStock(us);
-            const fxRate = isUS ? 29 : 1;
+            const fxRate = isUS ? usdFx() : 1;
             const price = (Number(us.currentPrice) || 0) * fxRate;
             const shares = us.shares;
 
@@ -1661,7 +1661,7 @@
           let currentHoldingsDivTotal = 0;
           stocks.forEach(st => {
             const isUS = isUsStock(st);
-            const fxRate = isUS ? 29 : 1;
+            const fxRate = isUS ? usdFx() : 1;
             (st.dividendHistory || []).forEach(dh => {
               currentHoldingsDivTotal += (Number(dh.cash) || 0) * fxRate;
             });
@@ -1706,7 +1706,7 @@
       let fCost = 0, fVal = 0, fDiv = 0, fLent = 0;
       filterStocks.forEach(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
 
         const p = (Number(s.currentPrice) || 0) * fxRate;
         const cashD = (Number(s.cashDividends) || 0) * fxRate;
@@ -1724,7 +1724,7 @@
 
       const isCurrentUS = currentFilter === '美股複委託';
       const fUnit = isCurrentUS ? 'US$' : '$';
-      const fFx = isCurrentUS ? 29 : 1;
+      const fFx = isCurrentUS ? usdFx() : 1;
 
       document.getElementById('filterTabCostTitle').textContent = `📌 [${labelName}] 投入成本`;
       document.getElementById('filterCost').textContent = fUnit + formatNum(fCost / fFx, isCurrentUS ? 2 : 0);
@@ -1780,7 +1780,7 @@
 
       // 只挑出「有金額」的現金股利紀錄；股票股利(stockShares)不在轉存範圍內，刪除後就一併移除
       const isUS = isUsStock(stock);
-      const fxRate = isUS ? 29 : 1;
+      const fxRate = isUS ? usdFx() : 1;
       const transferItems = (stock.dividendHistory || [])
         .filter(h => Number(h.cash) > 0)
         .map(h => ({
@@ -1823,7 +1823,7 @@
       const body = document.getElementById('deleteStockDividendBody');
       if (body) {
         body.innerHTML = `
-          <p style="margin-top:0;">「${esc(stock.name)}」持有期間領過現金股利，要不要把這些紀錄轉存到「股利 → 非持股歷史」？${isUS ? '<br/><span style="font-size:0.8rem; color:#766c5a;">（美股金額已依匯率 29 換算成台幣）</span>' : ''}</p>
+          <p style="margin-top:0;">「${esc(stock.name)}」持有期間領過現金股利，要不要把這些紀錄轉存到「股利 → 非持股歷史」？${isUS ? '<br/><span style="font-size:0.8rem; color:#766c5a;">（美股金額已依目前匯率換算成台幣）</span>' : ''}</p>
           <table class="dividend-table">
             <thead><tr><th>年度</th><th>金額</th><th>筆數</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
@@ -2254,7 +2254,7 @@
 
       stocks.forEach(st => {
         const isUS = isUsStock(st);
-        const fxRate = isUS ? 29 : 1;
+        const fxRate = isUS ? usdFx() : 1;
         (st.dividendHistory || []).forEach(dh => {
           if (normalizeYearKey(dh.year) !== rawKey) return;
           const cash = (Number(dh.cash) || 0) * fxRate;
@@ -2345,7 +2345,7 @@
       currentEditingStockId = stockId;
 
       const isUS = isUsStock(target);
-      const fxRate = isUS ? 29 : 1;
+      const fxRate = isUS ? usdFx() : 1;
       const unitSymbol = isUS ? 'US$' : '$';
 
       const curPrice = (Number(target.currentPrice) || 0) * fxRate;
