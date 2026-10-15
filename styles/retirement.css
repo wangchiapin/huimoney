@@ -31,3 +31,8 @@
 .ret-card-sub { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 .ret-chart-box { position: relative; height: 340px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 12px; }
 @media (max-width: 600px) { .ret-card-val { font-size: 20px; } }
+.ret-detail-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+.ret-detail th, .ret-detail td { text-align: right; white-space: nowrap; }
+.ret-detail th:first-child, .ret-detail td:first-child { text-align: center; }
+.ret-detail thead th { position: sticky; top: 0; z-index: 2; }
+.ret-detail tr.ret-hl td { background: #f3ecd8; font-weight: 600; }
