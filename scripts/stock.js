@@ -52,7 +52,8 @@
         stocks = savedStocks ? JSON.parse(savedStocks) : INITIAL_DATA;
 
         const savedAccounts = localStorage.getItem(STORAGE_KEY_CUSTOM_ACCOUNTS);
-        customAccounts = savedAccounts ? JSON.parse(savedAccounts) : [];
+        // 全新使用者：預設只給一個通用帳戶（之後可自行刪除或新增）；已有資料的人維持原樣
+        customAccounts = savedAccounts ? JSON.parse(savedAccounts) : (savedStocks ? [] : ['證券帳戶']);
 
         stocks.forEach(s => {
           if (s.stockShares === undefined) {
@@ -93,7 +94,7 @@
         exRightsInfo = savedExRights ? JSON.parse(savedExRights) : {};
       } catch (e) {
         stocks = INITIAL_DATA;
-        customAccounts = [];
+        customAccounts = ['證券帳戶'];
         pastColumns = INITIAL_REALIZED_EXCEL_COLUMNS;
         stockSales = INITIAL_STOCK_SALES;
         salesHistory = INITIAL_SALES_HISTORY;
@@ -411,7 +412,7 @@
     }
 
     function getAllAccounts() {
-      const defaultAccs = ['富邦證券', '國泰證券', '美股複委託'];
+      const defaultAccs = ['美股複委託'];   // 美股計算靠這個名字判斷，所以固定保留
       const set = new Set([...defaultAccs, ...customAccounts]);
       stocks.forEach(s => {
         if (s.account && !defaultAccs.includes(s.account) && !s.account.includes('+')) {
@@ -438,7 +439,7 @@
       const allAccs = getAllAccounts();
       const tabs = [
         { id: 'ALL', label: '全部持股' },
-        ...allAccs.map(acc => ({ id: acc, label: acc, isAccount: true, isCustom: !['富邦證券', '國泰證券', '美股複委託'].includes(acc) })),
+        ...allAccs.map(acc => ({ id: acc, label: acc, isAccount: true, isCustom: acc !== '美股複委託' })),
         { id: 'ETF', label: 'ETF' },
         { id: '台股', label: '台股個股 (合併)' },
         { id: 'STOCK_SALES', label: '📉 股票賣出', isSales: true },
@@ -2182,7 +2183,7 @@
       if (allAccs.includes(currentFilter)) {
         accSelect.value = currentFilter;
       } else {
-        accSelect.value = allAccs[0] || '富邦證券';
+        accSelect.value = allAccs[0] || '證券帳戶';
       }
       handleAutoDetectCategory();
 
