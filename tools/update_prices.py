@@ -75,18 +75,29 @@ def fetch_fx():
         raise ValueError('匯率數字異常：%r' % v)
     return round(v, 4)
 
+def us_stooq(sym):
+    text = get('https://stooq.com/q/l/?s=%s.us&f=sd2c&h&e=csv' % sym.lower(), timeout=15)
+    row = next(csv.DictReader(io.StringIO(text)))
+    return num(row.get('Close'))
+
+def us_yahoo(sym):
+    j = json.loads(get('https://query1.finance.yahoo.com/v8/finance/chart/%s?range=5d&interval=1d' % sym, timeout=15))
+    return num(j['chart']['result'][0]['meta']['regularMarketPrice'])
+
 def fetch_us(symbols):
-    out = {}
+    out, fails = {}, []
     for sym in symbols:
-        try:
-            text = get('https://stooq.com/q/l/?s=%s.us&f=sd2c&h&e=csv' % sym.lower(), timeout=15)
-            row = next(csv.DictReader(io.StringIO(text)))
-            p = num(row.get('Close'))
-            if p:
-                out[sym.upper()] = p
-        except Exception as e:
-            print('  美股略過 %s：%s' % (sym, e))
-    return out
+        p, why = None, []
+        for fn in (us_yahoo, us_stooq):   # 一個來源不行就換下一個
+            try:
+                p = fn(sym)
+                if p: break
+            except Exception as e:
+                why.append('%s: %s' % (fn.__name__, e))
+        if p: out[sym.upper()] = p
+        else:
+            fails.append(sym); print('  美股略過 %s：%s' % (sym, '; '.join(why) or '沒有價格'))
+    return out, fails
 
 def main():
     old = load_old()
@@ -108,8 +119,9 @@ def main():
         res['errors'].append('匯率：%s' % e); print('匯率失敗：', e)
     try:
         syms = [l.strip() for l in open(US_LIST, encoding='utf-8') if l.strip() and not l.startswith('#')]
-        us = fetch_us(syms)
+        us, fails = fetch_us(syms)
         if us: res['us'].update(us)
+        if fails: res['errors'].append('美股抓不到：' + '、'.join(fails))
         print('美股 %d/%d 檔' % (len(us), len(syms)))
     except FileNotFoundError:
         pass
