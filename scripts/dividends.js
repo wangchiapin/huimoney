@@ -1,10 +1,11 @@
     /* ====== 股利分頁（歷年總合 / 預估 / 非持股歷史）｜dividendEstimates 與過去股利紀錄相關函式 ======
        此檔案從 stock.js 拆分出來（架構重構 Phase 3），沿用 stock.js 頂部宣告的
-       全域狀態變數（stocks / customAccounts / dcaRows ... 等），
+       全域狀態變數（stocks / customAccounts / dcaRows / yfDetail ... 等），
        靠瀏覽器對 classic <script> 標籤的共用全域作用域運作，
        不需要 import/export，index.html 只要確保這個檔案在 stock.js 之前或之後載入皆可
        （所有呼叫都發生在 window.onload 之後，屆時所有 <script> 都已執行完畢）。 ====== */
 
+    /* ====== 媽的永豐：三表 + 總覽 一次全部渲染 (無分頁切換，並排顯示) ====== */
     /* ====== 渲染「歷年股利總合」子分頁 (股利分頁) ====== */
     function renderYearlySummaryTable(thead, tbody) {
       thead.innerHTML = `
@@ -254,6 +255,10 @@
        所有請求都直接從瀏覽器發出，不經過任何伺服器/第三方 API，完全免費。
        規則：只補目前是 0 的「預估除息/預估除權」欄位，使用者已手動改過的不覆蓋。 */
     async function fetchExRightsInfo() {
+      if (isPageLocked('dividends') || isPageLocked('dividends_estimate')) {
+        showToast('此分頁已鎖定，請先解鎖', 'error');
+        return;
+      }
       const btn = document.getElementById('btnUpdateExRights');
       const statusEl = document.getElementById('divEstLastUpdated');
       if (btn) { btn.disabled = true; btn.textContent = '🔄 更新中...'; }
@@ -561,6 +566,7 @@
 
     /* ====== 非持有/已實現股利：刪除最後一列空白列 (若最後一列全部欄位皆為空才刪) ====== */
     function handleDeleteLastPastRow() {
+      if (isPageLocked('dividends')) { showToast('此分頁已鎖定，請先解鎖', 'error'); return; }
       if (pastColumns.length === 0) return;
       const maxRows = Math.max(...pastColumns.map(c => c.items.length), 0);
       if (maxRows === 0) return;
@@ -584,6 +590,7 @@
 
     /* ====== 非持有/已實現股利：新增新年度欄位 ====== */
     function handleAddYear() {
+      if (isPageLocked('dividends')) { showToast('此分頁已鎖定，請先解鎖', 'error'); return; }
       const lastYear = pastColumns.length > 0 ? parseInt(pastColumns[pastColumns.length - 1].year) || (new Date().getFullYear() - 1911) : (new Date().getFullYear() - 1911);
       const newYear = prompt('請輸入新年度 (民國年，例如 116)：', String(lastYear + 1));
       if (!newYear) return;

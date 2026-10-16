@@ -9,7 +9,9 @@
        - 股利分頁：長條圖（各股票現金股利，持股中/已售出用不同顏色）+ 圓餅圖（股利領取比例，
          一樣持股中/已售出用不同顏色），股利範圍預設累計所有年份，也可以切換成單一年度。
        - 其他分頁（股票賣出/股票借出/定期定額/各股紀錄）：顯示「此分頁無分析圖表」提示。
- ====== */
+
+       密碼鎖定功能：如果「全部持股」頁面或成本/市值欄位被鎖定，持股分析圖不顯示；
+       如果「股利」頁面（含歷年股利總合/非持股股利子分頁）被鎖定，股利分析圖不顯示。 ====== */
 
     let stockAnalysisBarChart = null;
     let stockAnalysisPieChart = null;
@@ -18,6 +20,13 @@
 
     function isStockAnalysisApplicable() {
       return currentFilter === 'DIVIDENDS_TAB' || !STOCK_ANALYSIS_NA_FILTERS.includes(currentFilter);
+    }
+
+    function isStockAnalysisLocked() {
+      if (currentFilter === 'DIVIDENDS_TAB') {
+        return isPageLocked('dividends') || isPageLocked('dividends_summary') || isPageLocked('dividends_past');
+      }
+      return isPageLocked('holdings') || isFieldLocked('holdings.totalCost') || isFieldLocked('holdings.marketVal');
     }
 
     function openStockAnalysisModal() {
@@ -34,13 +43,25 @@
 
     function renderStockAnalysisModalContent() {
       const emptyMsg = document.getElementById('stockAnalysisEmptyMsg');
+      const lockedMsg = document.getElementById('stockAnalysisLockedMsg');
       const yearWrap = document.getElementById('stockAnalysisYearFilterWrap');
       const chartsWrap = document.getElementById('stockAnalysisChartsWrap');
       const legendWrap = document.getElementById('stockAnalysisColorLegend');
-      if (!emptyMsg || !yearWrap || !chartsWrap) return;
+      if (!emptyMsg || !lockedMsg || !yearWrap || !chartsWrap) return;
 
       if (!isStockAnalysisApplicable()) {
         emptyMsg.style.display = 'block';
+        lockedMsg.style.display = 'none';
+        yearWrap.style.display = 'none';
+        chartsWrap.style.display = 'none';
+        if (legendWrap) legendWrap.style.display = 'none';
+        return;
+      }
+
+      if (isStockAnalysisLocked()) {
+        emptyMsg.style.display = 'none';
+        lockedMsg.style.display = 'block';
+        lockedMsg.innerHTML = lockPlaceholderHtml(currentFilter === 'DIVIDENDS_TAB' ? 'dividends' : 'holdings', 'page');
         yearWrap.style.display = 'none';
         chartsWrap.style.display = 'none';
         if (legendWrap) legendWrap.style.display = 'none';
@@ -48,6 +69,7 @@
       }
 
       emptyMsg.style.display = 'none';
+      lockedMsg.style.display = 'none';
       chartsWrap.style.display = 'block';
 
       const isDividendsMode = currentFilter === 'DIVIDENDS_TAB';
@@ -89,7 +111,7 @@
     function renderStockAnalysisCharts() {
       // 防呆：不適用或鎖定的情況下不畫圖（正常流程下 renderStockAnalysisModalContent 已經擋掉，
       // 但年度下拉選單的 onchange 會直接呼叫這裡，所以還是要重複檢查一次）
-      if (!isStockAnalysisApplicable()) return;
+      if (!isStockAnalysisApplicable() || isStockAnalysisLocked()) return;
       if (currentFilter === 'DIVIDENDS_TAB') {
         renderDividendAnalysisCharts();
       } else {
@@ -107,7 +129,7 @@
       }
       return displayList.map(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
         const totalCost = (Number(s.totalCost) || 0) * fxRate;
         const shares = Number(s.shares) || 0;
         const currentPrice = (Number(s.currentPrice) || 0) * fxRate;
@@ -200,7 +222,7 @@
       const currentEntries = [];
       stocks.forEach(st => {
         const isUS = isUsStock(st);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
         let amt = 0;
         (st.dividendHistory || []).forEach(dh => {
           const key = normalizeYearKey(dh.year);

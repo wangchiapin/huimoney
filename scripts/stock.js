@@ -7,6 +7,9 @@
     const STORAGE_KEY_LENDING_INCOME = 'STOCK_INVESTMENT_EXCEL_PRO_V32_LENDING_INCOME';
     const STORAGE_KEY_LENDING_INCOME_YEARLY = 'STOCK_INVESTMENT_EXCEL_PRO_V32_LENDING_INCOME_YEARLY';
     const STORAGE_KEY_DCA = 'STOCK_INVESTMENT_EXCEL_PRO_V32_DCA';
+    const STORAGE_KEY_STOCK_BUYS = 'STOCK_INVESTMENT_EXCEL_PRO_V32_STOCK_BUYS';
+    const STORAGE_KEY_STMT_SETTINGS = 'STMT_IMPORT_SETTINGS_V1'; // 對帳單匯入：帳戶／名稱對應等設定
+    const STORAGE_KEY_STMT_IMPORTED = 'STMT_IMPORTED_V1';        // 對帳單匯入：已匯入過的對帳單
 
     const INITIAL_DATA = [];
 
@@ -20,6 +23,9 @@
     let pastColumns = [];
     let customAccounts = [];
     let stockSales = [];
+    let stockBuys = []; // 股票買進明細 (stock-buys.js)
+    let stmtSettings = {}; // 對帳單匯入設定 (stmt-import.js)
+    let stmtImported = []; // 已匯入的對帳單 [{statementId, label, period, importedAt}]
     let salesHistory = [];
     let stockLending = [];
     let lendingManagedIds = []; // 本次執行期間，曾被「股票借出」分頁同步過出借張數的持股 id
@@ -87,6 +93,11 @@
         const savedDca = localStorage.getItem(STORAGE_KEY_DCA);
         dcaRows = savedDca ? JSON.parse(savedDca) : [];
 
+        const savedBuys = localStorage.getItem(STORAGE_KEY_STOCK_BUYS);
+        stockBuys = savedBuys ? JSON.parse(savedBuys) : [];
+        stmtSettings = JSON.parse(localStorage.getItem(STORAGE_KEY_STMT_SETTINGS) || '{}') || {};
+        stmtImported = JSON.parse(localStorage.getItem(STORAGE_KEY_STMT_IMPORTED) || '[]') || [];
+
         const savedEst = localStorage.getItem('STOCK_INVESTMENT_DIVIDEND_ESTIMATES_V1');
         dividendEstimates = savedEst ? JSON.parse(savedEst) : {};
 
@@ -102,6 +113,7 @@
         lendingIncomeRows = [];
         lendingIncomeManualYearly = {};
         dcaRows = [];
+        stockBuys = [];
         dividendEstimates = {};
         exRightsInfo = {};
       }
@@ -118,7 +130,7 @@
 
     function recordSnapshot() {
       try {
-        historyStack.push(JSON.stringify({ stocks, pastColumns, customAccounts, stockSales, salesHistory, stockLending, lendingIncomeRows, lendingIncomeManualYearly, dcaRows, dividendEstimates, exRightsInfo }));
+        historyStack.push(JSON.stringify({ stocks, pastColumns, customAccounts, stockSales, stockBuys, stmtSettings, stmtImported, salesHistory, stockLending, lendingIncomeRows, lendingIncomeManualYearly, dcaRows, dividendEstimates, exRightsInfo }));
         if (historyStack.length > 50) historyStack.shift();
       } catch(e) {}
     }
@@ -131,6 +143,9 @@
           pastColumns = prev.pastColumns;
           if (prev.customAccounts) customAccounts = prev.customAccounts;
           if (prev.stockSales) stockSales = prev.stockSales;
+          if (prev.stockBuys) stockBuys = prev.stockBuys;
+          if (prev.stmtSettings) stmtSettings = prev.stmtSettings;
+          if (prev.stmtImported) stmtImported = prev.stmtImported;
           if (prev.salesHistory) salesHistory = prev.salesHistory;
           if (prev.stockLending) stockLending = prev.stockLending;
           if (prev.lendingIncomeRows) lendingIncomeRows = prev.lendingIncomeRows;
@@ -165,6 +180,9 @@
         localStorage.setItem(STORAGE_KEY_LENDING_INCOME, JSON.stringify(lendingIncomeRows));
         localStorage.setItem(STORAGE_KEY_LENDING_INCOME_YEARLY, JSON.stringify(lendingIncomeManualYearly));
         localStorage.setItem(STORAGE_KEY_DCA, JSON.stringify(dcaRows));
+        localStorage.setItem(STORAGE_KEY_STOCK_BUYS, JSON.stringify(stockBuys));
+        localStorage.setItem(STORAGE_KEY_STMT_SETTINGS, JSON.stringify(stmtSettings || {}));
+        localStorage.setItem(STORAGE_KEY_STMT_IMPORTED, JSON.stringify(stmtImported || []));
         localStorage.setItem('STOCK_INVESTMENT_DIVIDEND_ESTIMATES_V1', JSON.stringify(dividendEstimates));
         localStorage.setItem('STOCK_INVESTMENT_EXRIGHTS_INFO_V1', JSON.stringify(exRightsInfo));
       } catch (e) {
@@ -179,237 +197,6 @@
       renderSummary();
     }
 
-    
-    function gatherAllData() {
-      return {
-        stocks, pastColumns, customAccounts, stockSales, salesHistory, stockLending,
-        lendingIncomeRows, lendingIncomeManualYearly, dcaRows,
-        dividendEstimates, exRightsInfo,
-        snapshots: JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]'),
-        updatedAt: new Date().toISOString()
-      };
-    }
-
-    function applyAllData(data) {
-      if (!data) return;
-      if (data.stocks) stocks = data.stocks;
-      if (data.pastColumns) pastColumns = data.pastColumns;
-      if (data.customAccounts) customAccounts = data.customAccounts;
-      if (data.stockSales) stockSales = data.stockSales;
-      if (data.salesHistory) salesHistory = data.salesHistory;
-      if (data.stockLending) stockLending = data.stockLending;
-      if (data.lendingIncomeRows) lendingIncomeRows = data.lendingIncomeRows;
-      if (data.lendingIncomeManualYearly) lendingIncomeManualYearly = data.lendingIncomeManualYearly;
-      if (data.dcaRows) dcaRows = data.dcaRows;
-      if (data.dividendEstimates) dividendEstimates = data.dividendEstimates;
-      if (data.exRightsInfo) exRightsInfo = data.exRightsInfo;
-      if (data.snapshots) localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(data.snapshots));
-
-      localStorage.setItem(STORAGE_KEY_STOCKS, JSON.stringify(stocks));
-      localStorage.setItem(STORAGE_KEY_PAST, JSON.stringify(pastColumns));
-      localStorage.setItem(STORAGE_KEY_CUSTOM_ACCOUNTS, JSON.stringify(customAccounts));
-      localStorage.setItem(STORAGE_KEY_STOCK_SALES, JSON.stringify(stockSales));
-      localStorage.setItem(STORAGE_KEY_SALES_HISTORY, JSON.stringify(salesHistory));
-      localStorage.setItem(STORAGE_KEY_STOCK_LENDING, JSON.stringify(stockLending));
-      localStorage.setItem(STORAGE_KEY_LENDING_INCOME, JSON.stringify(lendingIncomeRows));
-      localStorage.setItem(STORAGE_KEY_LENDING_INCOME_YEARLY, JSON.stringify(lendingIncomeManualYearly));
-      localStorage.setItem(STORAGE_KEY_DCA, JSON.stringify(dcaRows));
-      localStorage.setItem('STOCK_INVESTMENT_DIVIDEND_ESTIMATES_V1', JSON.stringify(dividendEstimates));
-      localStorage.setItem('STOCK_INVESTMENT_EXRIGHTS_INFO_V1', JSON.stringify(exRightsInfo));
-
-      renderTabs();
-      renderTable();
-    }
-
-    /* ====== JSON 備份「合併」匯入：保留現有資料，只把匯入檔裡「本地沒有的」項目加進來，
-       不會覆蓋或刪除任何既有資料。與 applyAllData()（整份覆蓋，僅供「讀取雲端」時使用）分開。 ====== */
-    function mergeApplyAllData(data) {
-      if (!data) return { added: 0, skipped: 0 };
-      let added = 0, skipped = 0;
-      if (data.retirement && typeof importRetirementSettings === 'function') importRetirementSettings(data.retirement);
-
-      // 1) 有明確唯一鍵的資料：已存在的鍵一律略過（保留舊資料），只新增本地沒有的
-      function upsertByKey(existingArr, importedArr, keyFn) {
-        if (!Array.isArray(importedArr)) return;
-        const existingKeys = new Set(existingArr.map(keyFn));
-        importedArr.forEach(item => {
-          const k = keyFn(item);
-          if (k && existingKeys.has(k)) { skipped++; return; }
-          existingArr.push(item);
-          if (k) existingKeys.add(k);
-          added++;
-        });
-      }
-
-      upsertByKey(stocks, data.stocks, s => (s.code ? String(s.code).trim() : '') + '|' + (s.name || '').trim() + '|' + (s.account || ''));
-      upsertByKey(salesHistory, data.salesHistory, h => String(h.year || ''));
-      upsertByKey(stockLending, data.stockLending, l => (l.name || '').trim());
-      upsertByKey(dcaRows, data.dcaRows, r => (r.name || '').trim());
-      upsertByKey(pastColumns, data.pastColumns, c => String(c.year || ''));
-      if (Array.isArray(data.customAccounts)) {
-        data.customAccounts.forEach(acc => {
-          if (!customAccounts.includes(acc)) { customAccounts.push(acc); added++; }
-          else skipped++;
-        });
-      }
-
-      // 2) 沒有天然唯一鍵的交易明細記錄：直接附加在後面（保留舊資料，不覆蓋，可能重複匯入需自行檢查）
-      ['stockSales', 'lendingIncomeRows'].forEach(key => {
-        if (Array.isArray(data[key]) && data[key].length) {
-          const target = { stockSales, lendingIncomeRows }[key];
-          target.push(...data[key]);
-          added += data[key].length;
-        }
-      });
-
-      // 3) 物件型資料 (以鍵值儲存)：只補本地沒有的鍵，不覆蓋既有的
-      if (data.lendingIncomeManualYearly) {
-        Object.keys(data.lendingIncomeManualYearly).forEach(y => {
-          if (lendingIncomeManualYearly[y] === undefined) { lendingIncomeManualYearly[y] = data.lendingIncomeManualYearly[y]; added++; }
-          else skipped++;
-        });
-      }
-      if (data.dividendEstimates) {
-        Object.keys(data.dividendEstimates).forEach(k => {
-          if (dividendEstimates[k] === undefined) { dividendEstimates[k] = data.dividendEstimates[k]; added++; }
-          else skipped++;
-        });
-      }
-      if (data.exRightsInfo) {
-        Object.keys(data.exRightsInfo).forEach(k => {
-          if (exRightsInfo[k] === undefined) { exRightsInfo[k] = data.exRightsInfo[k]; added++; }
-          else skipped++;
-        });
-      }
-
-      // 4) 各股紀錄快照：以「快照日期」為鍵，本地沒有的日期才加入
-      if (Array.isArray(data.snapshots) && data.snapshots.length) {
-        let existingSnaps = [];
-        try { existingSnaps = JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]'); } catch (e) { existingSnaps = []; }
-        const existingDates = new Set(existingSnaps.map(s => s.date));
-        data.snapshots.forEach(s => {
-          if (s && s.date && !existingDates.has(s.date)) { existingSnaps.push(s); existingDates.add(s.date); added++; }
-          else skipped++;
-        });
-        localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(existingSnaps));
-      }
-
-      saveToStorage();
-      renderTabs();
-      renderTable();
-      return { added, skipped };
-    }
-
-    /* ====== 懸浮計算機邏輯與拖曳 ====== */
-    function toggleCalculator() {
-      const calc = document.getElementById('floatingCalculator');
-      if (calc) {
-        const isVisible = calc.style.display === 'block';
-        calc.style.display = isVisible ? 'none' : 'block';
-        if (!isVisible) {
-          calc.focus();
-          if (typeof closeOtherFloatingWidgetsOnMobile === 'function') closeOtherFloatingWidgetsOnMobile('calc');
-        }
-      }
-    }
-
-    let calcExpression = '0';
-    function calcUpdateScreen() {
-      const screen = document.getElementById('calcScreen');
-      if (screen) screen.textContent = calcExpression;
-    }
-    function calcClear() {
-      calcExpression = '0';
-      calcUpdateScreen();
-    }
-    function calcAppend(val) {
-      if (calcExpression === '0' && val !== '.') {
-        calcExpression = val;
-      } else {
-        calcExpression += val;
-      }
-      calcUpdateScreen();
-    }
-    function calcBackspace() {
-      if (calcExpression.length > 1) {
-        calcExpression = calcExpression.slice(0, -1);
-      } else {
-        calcExpression = '0';
-      }
-      calcUpdateScreen();
-    }
-    function calcEvaluate() {
-      try {
-        let res = eval(calcExpression.replace(/×/g, '*').replace(/÷/g, '/'));
-        calcExpression = String(res);
-      } catch (e) {
-        calcExpression = '錯誤';
-      }
-      calcUpdateScreen();
-    }
-
-    window.addEventListener('keydown', (e) => {
-      const calc = document.getElementById('floatingCalculator');
-      const activeEl = document.activeElement;
-      // 修正：原本只認 .cell-input 這個 class，但「財務總覽」的儲存格編輯器用的是
-      // .cell-editor（不同 class），導致計算機開著時財務總覽表格打字全被計算機吃掉。
-      // 改成只要目前 focus 在任何輸入框(input/textarea/select)或 contenteditable 上，
-      // 一律視為「在表格輸入」，不管是哪個分頁、哪個 class，鍵盤都優先給該輸入框。
-      const inputTags = ['INPUT', 'TEXTAREA', 'SELECT'];
-      const isInTableInput = !!activeEl && (
-        inputTags.includes(activeEl.tagName) || activeEl.isContentEditable
-      );
-
-      if (calc && calc.style.display === 'block' && !isInTableInput) {
-        if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
-          calcAppend(e.key);
-          e.preventDefault();
-        } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
-          calcAppend(e.key);
-          e.preventDefault();
-        } else if (e.key === 'Enter' || e.key === '=') {
-          calcEvaluate();
-          e.preventDefault();
-        } else if (e.key === 'Backspace') {
-          calcBackspace();
-          e.preventDefault();
-        } else if (e.key.toLowerCase() === 'c' || e.key === 'Delete') {
-          calcClear();
-          e.preventDefault();
-        }
-      }
-    });
-
-    function setupCalculatorDrag() {
-      const calc = document.getElementById('floatingCalculator');
-      const header = document.getElementById('calcDragHandle');
-      if (!calc || !header) return;
-
-      let isDragging = false;
-      let startX, startY, initialX, initialY;
-
-      header.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        initialX = calc.offsetLeft;
-        initialY = calc.offsetTop;
-        e.preventDefault();
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        let dx = e.clientX - startX;
-        let dy = e.clientY - startY;
-        calc.style.left = (initialX + dx) + 'px';
-        calc.style.top = (initialY + dy) + 'px';
-        calc.style.right = 'auto';
-      });
-
-      window.addEventListener('mouseup', () => {
-        isDragging = false;
-      });
-    }
 
     function getAllAccounts() {
       const defaultAccs = ['美股複委託'];   // 美股計算靠這個名字判斷，所以固定保留
@@ -442,6 +229,7 @@
         ...allAccs.map(acc => ({ id: acc, label: acc, isAccount: true, isCustom: acc !== '美股複委託' })),
         { id: 'ETF', label: 'ETF' },
         { id: '台股', label: '台股個股 (合併)' },
+        { id: 'STOCK_BUYS', label: '📈 股票買進', isBuys: true },
         { id: 'STOCK_SALES', label: '📉 股票賣出', isSales: true },
         { id: 'STOCK_LENDING_TAB', label: '📦 股票借出', isLending: true },
         { id: 'DIVIDENDS_TAB', label: '📊 股利', isDividends: true },
@@ -452,11 +240,19 @@
       const tabContainer = document.getElementById('tabGroup');
       if (!tabContainer) return;
 
-      const visibleTabs = tabs;
+      // 隱藏子分頁功能：被設成隱藏的分頁直接從按鈕列拿掉
+      const visibleTabs = tabs.filter(t => !(typeof isTabHidden === 'function' && isTabHidden(t.id)));
+
+      // 如果目前選到的分頁剛好是被隱藏的（例如「暫時顯示」到期了、或設定改變時人還停留在上面），
+      // 自動切去「全部持股」，不要讓畫面卡在一個已經消失的分頁上
+      if (typeof isTabHidden === 'function' && currentFilter !== 'ALL' && isTabHidden(currentFilter)) {
+        setFilter('ALL');
+        return;
+      }
 
       tabContainer.innerHTML = visibleTabs.map(t => {
         let countText = '';
-        if (t.id === 'DIVIDENDS_TAB' || t.id === 'STOCK_SALES' || t.id === 'STOCK_LENDING_TAB' || t.id === 'SNAPSHOT_LOGS' || t.id === 'DCA_TAB') {
+        if (t.id === 'DIVIDENDS_TAB' || t.id === 'STOCK_SALES' || t.id === 'STOCK_BUYS' || t.id === 'STOCK_LENDING_TAB' || t.id === 'SNAPSHOT_LOGS' || t.id === 'DCA_TAB') {
           countText = '';
         } else {
           countText = ` (${countByFilter(t.id)})`;
@@ -475,12 +271,18 @@
           `;
         } else {
           return `
-            <button class="tab-btn ${currentFilter === t.id ? 'active' : ''} ${t.isDividends ? 'tab-btn-dividends' : ''} ${t.isSnapshot ? 'tab-btn-snapshot' : ''} ${t.isSales ? 'tab-btn-sales' : ''} ${t.isLending ? 'tab-btn-lending' : ''} ${t.isDCA ? 'tab-btn-dca' : ''}" onclick="setFilter('${safeId}')">
+            <button class="tab-btn ${currentFilter === t.id ? 'active' : ''} ${t.isDividends ? 'tab-btn-dividends' : ''} ${t.isSnapshot ? 'tab-btn-snapshot' : ''} ${t.isSales ? 'tab-btn-sales' : ''} ${t.isBuys ? 'tab-btn-buys' : ''} ${t.isLending ? 'tab-btn-lending' : ''} ${t.isDCA ? 'tab-btn-dca' : ''}" onclick="setFilter('${safeId}')">
               ${esc(t.label)}${countText}
             </button>
           `;
         }
       }).join('');
+    }
+
+    // 已全數賣出：用過買進／先買先賣（有批次清單）而且股數變 0 的持股。
+    // 剛手動新增、還沒填股數的持股沒有批次清單，不算。
+    function isSoldOut(s) {
+      return !!s && (Number(s.shares) || 0) <= 0 && Array.isArray(s.lots) && s.lots.length > 0;
     }
 
     function countByFilter(filterId) {
@@ -496,6 +298,9 @@
       currentFilter = filterId;
       if (filterId === 'STOCK_SALES') {
         salesSubTab = 'list';
+      }
+      if (filterId === 'STOCK_BUYS') {
+        buysSubTab = 'list';
       }
       if (filterId === 'STOCK_LENDING_TAB') {
         lendingSubTab = 'holdings';
@@ -544,12 +349,18 @@
         let appView = 'finance';
         if (stockViewEl && stockViewEl.style.display !== 'none') appView = 'stock';
         else if (insuranceViewEl && insuranceViewEl.style.display !== 'none') appView = 'insurance';
-        else { const rv = document.getElementById('retirementView'); if (rv && rv.style.display !== 'none') appView = 'retirement'; }
+        else {
+          const overviewViewEl = document.getElementById('overviewView');
+          if (overviewViewEl && overviewViewEl.style.display !== 'none') appView = 'overview';
+          const rv = document.getElementById('retirementView');
+          if (rv && rv.style.display !== 'none') appView = 'retirement';
+        }
         localStorage.setItem(NAV_STATE_KEY, JSON.stringify({
           appView: appView,
           stockFilter: currentFilter,
           dividendsSubTab: dividendsSubTab,
           salesSubTab: salesSubTab,
+          buysSubTab: buysSubTab,
           lendingSubTab: lendingSubTab
         }));
       } catch (e) {}
@@ -562,6 +373,8 @@
 
         if (saved.appView === 'retirement') {
           if (typeof switchAppView === 'function') switchAppView('retirement');
+        } else if (saved.appView === 'overview') {
+          if (typeof switchAppView === 'function') switchAppView('overview');
         } else if (saved.appView === 'insurance') {
           if (typeof switchAppView === 'function') switchAppView('insurance');
         } else if (saved.appView === 'stock') {
@@ -573,6 +386,9 @@
             }
             if (saved.stockFilter === 'STOCK_SALES' && saved.salesSubTab) {
               setSalesSubTab(saved.salesSubTab);
+            }
+            if (saved.stockFilter === 'STOCK_BUYS' && saved.buysSubTab) {
+              setBuysSubTab(saved.buysSubTab);
             }
             if (saved.stockFilter === 'STOCK_LENDING_TAB' && saved.lendingSubTab) {
               setLendingSubTab(saved.lendingSubTab);
@@ -682,7 +498,7 @@
       stocks.forEach(st => {
         const p = Number(st.currentPrice) || 0;
         const isUS = isUsStock(st);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
 
         (st.dividendHistory || []).forEach(dh => {
           const key = normalizeYearKey(dh.year);
@@ -714,6 +530,14 @@
       });
 
       return sorted;
+    }
+
+    // 分頁被鎖定時，把整個表格換成「功能尚待開發」提示（thead/tbody 版本，
+    // 給股票賣出/借出/股利/定期定額/各股紀錄這幾個用 thead+tbody 渲染的分頁共用）
+    function renderPageLockPlaceholder(thead, tbody, pageKey, colspan) {
+      if (thead) thead.innerHTML = `<tr><th>提示</th></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center; padding:60px 16px;">${lockPlaceholderHtml(pageKey, 'page')}</td></tr>`;
+      if (typeof renderSummary === 'function') { try { renderSummary(); } catch (e) {} }
     }
 
     // 計算「相鄰列的某個欄位值相同」該怎麼合併成 rowspan。
@@ -794,7 +618,7 @@
       // 判斷這次 render 是不是「剛切換進這個分頁/子分頁」——只有這種情況才要自動捲到
       // 最新一筆資料；如果分頁/子分頁組合跟上次一樣，代表這次只是編輯資料觸發的重繪，
       // 不該把使用者正在編輯的捲動位置強制捲走。
-      const tabContextKey = currentFilter + '|' + salesSubTab + '|' + dividendsSubTab + '|' + lendingSubTab;
+      const tabContextKey = currentFilter + '|' + buysSubTab + '|' + salesSubTab + '|' + dividendsSubTab + '|' + lendingSubTab;
       const isFreshTabEntry = tabContextKey !== lastEnteredTabContext;
       lastEnteredTabContext = tabContextKey;
 
@@ -821,10 +645,14 @@
       if (salesQueryPanel) salesQueryPanel.style.display = 'none'; // 預設隱藏，只有「賣出明細」子分頁會打開
 
       // 「彈窗新增賣出」按鈕：只在股票賣出的「賣出明細」子分頁顯示（小計/歷年紀錄子分頁、或分頁被鎖定時都不顯示）
+      const buysSubBar = document.getElementById('buysSubBar');
+      if (buysSubBar) buysSubBar.style.display = currentFilter === 'STOCK_BUYS' ? 'flex' : 'none';
+
       const btnAddSaleModal = document.getElementById('btnAddSaleModal');
       if (btnAddSaleModal) {
         const showSaleModalBtn = currentFilter === 'STOCK_SALES'
-          && salesSubTab !== 'summary' && salesSubTab !== 'history';
+          && salesSubTab !== 'summary' && salesSubTab !== 'history'
+          && !isPageLocked('sales') && !isPageLocked('sales_detail');
         btnAddSaleModal.style.display = showSaleModalBtn ? '' : 'none';
       }
 
@@ -867,8 +695,19 @@
 
         const yrContainer = document.getElementById('summaryYearSelectorContainer');
         if (yrContainer) yrContainer.style.display = (salesSubTab === 'summary') ? 'flex' : 'none';
-        if (salesQueryPanel) salesQueryPanel.style.display = (salesSubTab !== 'summary' && salesSubTab !== 'history') ? 'flex' : 'none';
+        if (salesQueryPanel) salesQueryPanel.style.display = (salesSubTab !== 'summary' && salesSubTab !== 'history' && !isPageLocked('sales_detail') && !isPageLocked('sales')) ? 'flex' : 'none';
 
+        if (topScrollWrapper) topScrollWrapper.style.display = 'none';
+        if (mainTableContainer) mainTableContainer.classList.remove('with-top-scroll');
+      } else if (currentFilter === 'STOCK_BUYS') {
+        if (btnAddStock) btnAddStock.textContent = '➕ 新增買進';
+        if (btnAddStock) btnAddStock.style.display = (buysSubTab === 'list') ? '' : 'none';
+        if (btnDel) btnDel.style.display = 'none';
+        if (btnAddYear) btnAddYear.style.display = 'none';
+        if (pastCalcCard) pastCalcCard.style.display = 'none';
+        if (snapshotDateBar) snapshotDateBar.style.display = 'none';
+        if (salesSubBar) salesSubBar.style.display = 'none';
+        if (lendingSubBar) lendingSubBar.style.display = 'none';
         if (topScrollWrapper) topScrollWrapper.style.display = 'none';
         if (mainTableContainer) mainTableContainer.classList.remove('with-top-scroll');
       } else if (currentFilter === 'STOCK_LENDING_TAB') {
@@ -931,28 +770,71 @@
 
       // 0-2. 股利分頁 (DIVIDENDS_TAB)
       if (currentFilter === 'DIVIDENDS_TAB') {
+        if (isPageLocked('dividends')) {
+          renderPageLockPlaceholder(thead, tbody, 'dividends', 6);
+          return;
+        }
         if (dividendsSubTab === 'summary') {
+          if (isPageLocked('dividends_summary')) {
+            renderPageLockPlaceholder(thead, tbody, 'dividends_summary', 6);
+            return;
+          }
           renderYearlySummaryTable(thead, tbody);
           return;
         }
         if (dividendsSubTab === 'past') {
+          if (isPageLocked('dividends_past')) {
+            renderPageLockPlaceholder(thead, tbody, 'dividends_past', 6);
+            return;
+          }
           renderPastDividendsTable(thead, tbody, isFreshTabEntry);
           return;
         }
         if (dividendsSubTab === 'estimate') {
+          if (isPageLocked('dividends_estimate')) {
+            renderPageLockPlaceholder(thead, tbody, 'dividends_estimate', 6);
+            return;
+          }
           renderEstimatedDividendsTable(thead, tbody);
           return;
         }
       }
 
+      // 0-3. 股票買進分頁 (STOCK_BUYS) — stock-buys.js
+      if (currentFilter === 'STOCK_BUYS') {
+        if (isPageLocked('buys')) {
+          renderPageLockPlaceholder(thead, tbody, 'buys', 11);
+          return;
+        }
+        if (buysSubTab === 'lots') renderStockLotsTable(thead, tbody);
+        else renderStockBuysTable(thead, tbody, isFreshTabEntry);
+        return;
+      }
+
       // 1. 股票賣出紀錄分頁 (STOCK_SALES)
       if (currentFilter === 'STOCK_SALES') {
+        if (isPageLocked('sales')) {
+          renderPageLockPlaceholder(thead, tbody, 'sales', 16);
+          return;
+        }
         if (salesSubTab === 'summary') {
+          if (isPageLocked('sales_summary')) {
+            renderPageLockPlaceholder(thead, tbody, 'sales_summary', 24);
+            return;
+          }
           renderSalesSummaryTable(thead, tbody);
           return;
         }
         if (salesSubTab === 'history') {
+          if (isPageLocked('sales_history')) {
+            renderPageLockPlaceholder(thead, tbody, 'sales_history', 6);
+            return;
+          }
           renderSalesHistoryTable(thead, tbody);
+          return;
+        }
+        if (isPageLocked('sales_detail')) {
+          renderPageLockPlaceholder(thead, tbody, 'sales_detail', 16);
           return;
         }
 
@@ -1093,7 +975,7 @@
           const rowBg = salesMonthColor(r.date);
 
           return `
-            <tr${rowBg ? ` style="background:${rowBg};"` : ''}>
+            <tr${todoRowAttr(r, rowBg)}>
               ${dateCellHtml}
               <td class="editable-col"><input type="text" class="cell-input" style="font-weight:700;" data-sale-idx="${rIdx}" data-col="1" value="${esc(r.name || '')}" onfocus="this.select()" onkeydown="handleSaleKey(event, ${rIdx}, 1)" onchange="updateSaleRow(${rIdx}, 'name', this.value)" /></td>
               <td class="editable-col"><input type="number" step="any" class="cell-input font-mono" data-sale-idx="${rIdx}" data-col="2" value="${esc(r.shares !== undefined && r.shares !== '' ? r.shares : '')}" onfocus="this.select()" onkeydown="handleSaleKey(event, ${rIdx}, 2)" onchange="updateSaleRow(${rIdx}, 'shares', this.value)" /></td>
@@ -1116,6 +998,7 @@
                 <button class="btn-icon-plain" title="${(r.note || '').trim() ? '查看/編輯備註' : '新增備註'}" onclick="openNoteModal('sale', ${rIdx})" style="font-size:1.05rem; background:none; border:none; cursor:pointer;">${(r.note || '').trim() ? '📝' : '🗒️'}</button>
               </td>
               <td>
+                ${todoFlagBtn('sales', r)}
                 <button class="btn-del" title="刪除" onclick="deleteStockSale(${rIdx})">✕</button>
               </td>
             </tr>
@@ -1149,7 +1032,7 @@
           </tr>
         `;
 
-        tbody.innerHTML = rowsHtml;
+        tbody.innerHTML = todoBannerRow('sales', thead) + rowsHtml;
         renderSummary();
         if (isFreshTabEntry) {
           setTimeout(() => {
@@ -1161,7 +1044,15 @@
 
       // 1.5 股票借出分頁 (STOCK_LENDING_TAB)
       if (currentFilter === 'STOCK_LENDING_TAB') {
+        if (isPageLocked('lending')) {
+          renderPageLockPlaceholder(thead, tbody, 'lending', 10);
+          return;
+        }
         if (lendingSubTab === 'income') {
+          if (isPageLocked('lending_income')) {
+            renderPageLockPlaceholder(thead, tbody, 'lending_income', 11);
+            return;
+          }
           renderLendingIncomeTable(thead, tbody);
           if (isFreshTabEntry) {
             setTimeout(() => {
@@ -1169,6 +1060,10 @@
             }, 50);
           }
         } else {
+          if (isPageLocked('lending_holdings')) {
+            renderPageLockPlaceholder(thead, tbody, 'lending_holdings', 10);
+            return;
+          }
           renderStockLendingTable(thead, tbody);
         }
         return;
@@ -1176,12 +1071,20 @@
 
       // 1.6 定期定額分頁 (DCA_TAB)
       if (currentFilter === 'DCA_TAB') {
+        if (isPageLocked('dca')) {
+          renderPageLockPlaceholder(thead, tbody, 'dca', 6);
+          return;
+        }
         renderDcaTable(thead, tbody);
         return;
       }
 
       // 2. 各股紀錄分頁 (Snapshot Logs)
       if (currentFilter === 'SNAPSHOT_LOGS') {
+        if (isPageLocked('snapshot')) {
+          renderPageLockPlaceholder(thead, tbody, 'snapshot', 9);
+          return;
+        }
         let allSnaps = [];
         const storedSnap = localStorage.getItem('ASSET_SNAPSHOTS_V1');
         if (storedSnap) {
@@ -1261,6 +1164,10 @@
       }
 
       // 3. 標準持股表頭 (所有證券帳戶分頁皆支援 ☰ 拖曳排序)
+      if (isPageLocked('holdings')) {
+        renderPageLockPlaceholder(thead, tbody, 'holdings', 13);
+        return;
+      }
       const allAccs = getAllAccounts();
       const isAccountTab = allAccs.includes(currentFilter);
 
@@ -1297,6 +1204,9 @@
         );
       }
 
+      // 已全數賣出（股數 0）的持股：保留（股利紀錄還在），排到最下面
+      displayList = displayList.filter(s => !isSoldOut(s)).concat(displayList.filter(s => isSoldOut(s)));
+
       if (displayList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${isAccountTab ? 13 : 12}" style="text-align:center; padding:30px; color:#94a3b8;">無相符股票標的</td></tr>`;
         renderSummary();
@@ -1305,7 +1215,7 @@
 
       tbody.innerHTML = displayList.map((s, rowIndex) => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
 
         const totalCost = (Number(s.totalCost) || 0) * fxRate;
         const shares = Number(s.shares) || 0;
@@ -1329,21 +1239,33 @@
         const enableDrag = isAccountTab && !query && !isMergedRow;
         const unitSymbol = isUS ? 'US$' : '$';
 
-        const cellCurrentPrice = `${unitSymbol}${formatNum(currentPrice / fxRate, isUS ? 2 : 2)}`;
+        // 密碼鎖定功能：欄位級鎖定 —— 被鎖定的欄位改顯示「功能尚待開發」佔位內容，
+        // 其餘欄位不受影響；欄位本身的 <td> 結構/寬度維持不變。
+        const cellCurrentPrice = isFieldLocked('holdings.currentPrice')
+          ? lockPlaceholderHtml('holdings.currentPrice', 'field')
+          : `${unitSymbol}${formatNum(currentPrice / fxRate, isUS ? 2 : 2)}`;
 
-        const cellMarketVal = (isMergedRow ? `<span class="font-mono font-bold">${unitSymbol}${formatNum(marketVal / fxRate, isUS ? 2 : 0)}</span>` : `
+        const cellMarketVal = isFieldLocked('holdings.marketVal')
+          ? lockPlaceholderHtml('holdings.marketVal', 'field')
+          : (isMergedRow ? `<span class="font-mono font-bold">${unitSymbol}${formatNum(marketVal / fxRate, isUS ? 2 : 0)}</span>` : `
                 <input type="number" step="any" class="cell-input font-bold" data-row="${rowIndex}" data-col="0" data-field="marketVal" value="${esc(Number(s.marketVal) || 0)}" onfocus="this.select()" onkeydown="handleCellKey(event, ${rowIndex}, 0)" onchange="updateValue(${s.id}, 'marketVal', this.value)" />
               `);
 
-        const cellTotalCost = (isMergedRow ? `<span class="font-mono font-bold">${unitSymbol}${formatNum(Number(s.totalCost) || 0, isUS ? 2 : 0)}</span>` : `
+        const cellTotalCost = isFieldLocked('holdings.totalCost')
+          ? lockPlaceholderHtml('holdings.totalCost', 'field')
+          : (isMergedRow ? `<span class="font-mono font-bold">${unitSymbol}${formatNum(Number(s.totalCost) || 0, isUS ? 2 : 0)}</span>` : `
                 <input type="number" step="any" class="cell-input font-bold" data-row="${rowIndex}" data-col="1" data-field="totalCost" value="${esc(Number(s.totalCost) || 0)}" onfocus="this.select()" onkeydown="handleCellKey(event, ${rowIndex}, 1)" onchange="updateValue(${s.id}, 'totalCost', this.value)" />
               `);
 
-        const cellShares = (isMergedRow ? `<span class="font-mono font-bold">${formatNum(shares, 0)}</span>` : `
+        const cellShares = isFieldLocked('holdings.shares')
+          ? lockPlaceholderHtml('holdings.shares', 'field')
+          : (isMergedRow ? `<span class="font-mono font-bold">${formatNum(shares, 0)}</span>` : `
                 <input type="number" step="any" class="cell-input" data-row="${rowIndex}" data-col="2" data-field="shares" value="${esc(shares)}" onfocus="this.select()" onkeydown="handleCellKey(event, ${rowIndex}, 2)" onchange="updateValue(${s.id}, 'shares', this.value)" />
               `);
 
-        const cellProfit = `
+        const cellProfit = isFieldLocked('holdings.profit')
+          ? lockPlaceholderHtml('holdings.profit', 'field')
+          : `
               <div style="font-weight:700; color:${isProfit ? 'var(--up-red)' : 'var(--down-green)'};">
                 ${isProfit ? '+' : ''}${unitSymbol}${formatNum(profit / fxRate, isUS ? 2 : 0)}
               </div>
@@ -1352,29 +1274,39 @@
               </div>
             `;
 
-        const cellAvgCost = `${unitSymbol}${formatNum(avgCostPerShare / fxRate, 2)}`;
+        const cellAvgCost = isFieldLocked('holdings.avgCost')
+          ? lockPlaceholderHtml('holdings.avgCost', 'field')
+          : `${unitSymbol}${formatNum(avgCostPerShare / fxRate, 2)}`;
 
-        const cellCashDiv = `
+        const cellCashDiv = isFieldLocked('holdings.cashDividends')
+          ? lockPlaceholderHtml('holdings.cashDividends', 'field')
+          : `
               <button class="btn-cash-pill" onclick="openDividendModal('${s.id}', 'cash')">
                 ${unitSymbol}${formatNum((Number(cashDiv) || 0) / fxRate, isUS ? 2 : 0)} 💰
               </button>
             `;
 
-        const cellStockDiv = `
+        const cellStockDiv = isFieldLocked('holdings.stockDividends')
+          ? lockPlaceholderHtml('holdings.stockDividends', 'field')
+          : `
               <button class="btn-stock-pill" onclick="openDividendModal('${s.id}', 'stock')">
                 <span>${unitSymbol}${formatNum(stockDivVal / fxRate, isUS ? 2 : 0)} 📈</span>
                 <span style="font-size:0.7rem; font-weight:normal; opacity:0.85;">(${formatNum(stockShares, 0)} 股)</span>
               </button>
             `;
 
-        const cellNetCost = `${unitSymbol}${formatNum(netCostPerShare / fxRate, 2)}`;
+        const cellNetCost = isFieldLocked('holdings.netCost')
+          ? lockPlaceholderHtml('holdings.netCost', 'field')
+          : `${unitSymbol}${formatNum(netCostPerShare / fxRate, 2)}`;
 
-        const cellLentShares = (isMergedRow ? `<span class="font-mono">${formatNum(lentShares, 0)}</span>` : `
+        const cellLentShares = isFieldLocked('holdings.lentShares')
+          ? lockPlaceholderHtml('holdings.lentShares', 'field')
+          : (isMergedRow ? `<span class="font-mono">${formatNum(lentShares, 0)}</span>` : `
                 <input type="number" step="any" class="cell-input" style="color:#64748b;" data-row="${rowIndex}" data-col="3" data-field="lentShares" value="${esc(lentShares)}" onfocus="this.select()" onkeydown="handleCellKey(event, ${rowIndex}, 3)" onchange="updateValue(${s.id}, 'lentShares', this.value)" />
               `);
 
         return `
-          <tr data-id="${s.id}" ${enableDrag ? 'draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, ' + s.id + ')" ondragend="onDragEnd(event)"' : ''}>
+          <tr data-id="${s.id}" class="${isSoldOut(s) ? 'row-sold-out' : ''}" ${enableDrag ? 'draggable="true" ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, ' + s.id + ')" ondragend="onDragEnd(event)"' : ''}>
             ${isAccountTab ? `
               <td>
                 ${enableDrag ? `<span class="drag-handle" title="按住拖曳排序">☰</span>` : `<span style="color:#94a3b8; font-size:0.75rem;">-</span>`}
@@ -1382,7 +1314,7 @@
             ` : ''}
 
             <td>
-              <div style="font-weight:700;">${esc(s.name)} <span style="font-size:0.75rem; color:#64748b;">${s.code ? '(' + esc(s.code) + ')' : ''}</span></div>
+              <div style="font-weight:700;">${esc(s.name)} <span style="font-size:0.75rem; color:#64748b;">${s.code ? '(' + esc(s.code) + ')' : ''}</span>${isSoldOut(s) ? ' <span class="sold-out-tag">已全數賣出</span>' : ''}</div>
               <div style="font-size:0.72rem; color:${isMergedRow ? '#766c5a' : '#b3a998'}; font-weight:${isMergedRow ? '700' : 'normal'};">
                 ${s.account} ${isMergedRow ? '⚡' : ''} ${isUS ? '(美金)' : ''}
               </div>
@@ -1421,11 +1353,48 @@
     }
 
 
+    /* ====== 調整 renderSummary 以支援 4 個卡片 ====== */
+    // 「分頁專屬概況看板」每個分頁實際用到的卡片版位／欄數，鎖定時要照著同樣版面顯示佔位符，
+    // 不然畫面會忽大忽小、跳動。
+    const SUBDASH_COLS = { holdings: 4, sales: 3, lending: 3, yf: 3, dca: 4, dividends: 3, snapshot: 3 };
+    const SUBDASH_LOCK_SLOTS = {
+      holdings: ['filterCost', 'filterValue', 'filterProfit', 'filterDividends'],
+      sales: ['filterCost', 'filterProfit', 'filterDividends'],
+      lending: ['filterCost', 'filterProfit', 'filterDividends'],
+      yf: ['filterCost', 'filterProfit', 'filterDividends'],
+      dca: ['filterCost', 'filterValue'],
+      dividends: ['filterCost', 'filterProfit', 'filterDividends'],
+      snapshot: ['filterCost', 'filterProfit', 'filterDividends']
+    };
+    const SUBDASH_TITLE_IDS = { filterCost: 'filterTabCostTitle', filterValue: 'filterTabValTitle', filterProfit: 'filterTabProfitTitle', filterDividends: 'filterTabDivTitle' };
+    const SUBDASH_DESC_IDS = { filterCost: 'filterCostDesc', filterValue: 'filterValDesc', filterProfit: 'filterProfitRate', filterDividends: 'filterLent' };
+
+    // 鎖定「分頁專屬概況看板」時的佔位畫面：只改寫每張卡片既有元素的內容(textContent/innerHTML)，
+    // 絕對不整個 innerHTML 掉 subDashboardContainer 本身或個別卡片容器——
+    // 這些卡片的 DOM 節點是 index.html 裡固定的、不會重新渲染整組，如果連節點一起砍掉，
+    // 之後解鎖時 getElementById 會找不到對應元素，卡片就永遠救不回來了。
+    function renderSubDashboardLockPlaceholder(pageKey) {
+      const subDashContainer = document.getElementById('subDashboardContainer');
+      const subCardValContainer = document.getElementById('subCardValContainer');
+      const cols = SUBDASH_COLS[pageKey] || 4;
+      if (subDashContainer) subDashContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      if (subCardValContainer) subCardValContainer.style.display = (cols >= 4) ? 'block' : 'none';
+
+      (SUBDASH_LOCK_SLOTS[pageKey] || []).forEach(valueId => {
+        const valueEl = document.getElementById(valueId);
+        if (valueEl) { valueEl.innerHTML = lockPlaceholderHtml(pageKey + '_cards', 'page'); valueEl.style.color = ''; }
+        const titleEl = document.getElementById(SUBDASH_TITLE_IDS[valueId]);
+        if (titleEl) titleEl.textContent = '📌';
+        const descEl = document.getElementById(SUBDASH_DESC_IDS[valueId]);
+        if (descEl) descEl.textContent = '';
+      });
+    }
+
     function renderSummary() {
       let totalCost = 0, totalVal = 0, totalDiv = 0, totalLent = 0;
       stocks.forEach(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
 
         const p = (Number(s.currentPrice) || 0) * fxRate;
         const cashD = (Number(s.cashDividends) || 0) * fxRate;
@@ -1466,6 +1435,14 @@
       }
       if (elSummaryDivs) elSummaryDivs.textContent = '$' + formatNum(combinedAllDividends, 0);
       if (elSummaryLent) elSummaryLent.textContent = formatNum(totalLent, 0);
+
+      // 「分頁專屬概況看板」4張卡可以整組鎖定（跟下面的表格鎖定各自獨立），
+      // 用 getCurrentPageLockKey() 對應的分頁 key + '_cards' 當鎖定設定的 key
+      const subDashPageKey = (typeof getCurrentPageLockKey === 'function') ? getCurrentPageLockKey() : 'holdings';
+      if (typeof isPageLocked === 'function' && isPageLocked(subDashPageKey + '_cards')) {
+        renderSubDashboardLockPlaceholder(subDashPageKey);
+        return;
+      }
 
       const subDashContainer = document.getElementById('subDashboardContainer');
       const subCardValContainer = document.getElementById('subCardValContainer');
@@ -1555,6 +1532,30 @@
         if (elDivs) elDivs.textContent = '$' + formatNum(totalIncomeAllYears, 0);
         if (elLent) elLent.textContent = `110年至今，已入款實際收入加總`;
         return;
+      } else if (currentFilter === 'STOCK_BUYS') {
+        if (subDashContainer) subDashContainer.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        if (subCardValContainer) subCardValContainer.style.display = 'block';
+        const rocYear = String(new Date().getFullYear() - 1911);
+        const ofYear = r => String(r.date || '').replace(/[^0-9]/g, '').padStart(7, '0').slice(0, 3) === rocYear.padStart(3, '0');
+        const sumCost = arr => arr.reduce((t, r) => t + (Number(r.cost) || 0), 0);
+        const yearRows = stockBuys.filter(ofYear);
+        const dcaBuyRows = stockBuys.filter(r => r.type === '定期定額');
+        const lotCount = stocks.filter(st => (Number(st.shares) || 0) > 0).length;
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('filterTabCostTitle', '📌 [股票買進] 總成本');
+        set('filterCost', '$' + formatNum(sumCost(stockBuys), 0));
+        set('filterCostDesc', `共 ${stockBuys.length} 筆買進紀錄`);
+        set('filterTabValTitle', `📅 ${rocYear} 年買進`);
+        set('filterValue', '$' + formatNum(sumCost(yearRows), 0));
+        set('filterValDesc', `今年 ${yearRows.length} 筆`);
+        set('filterTabProfitTitle', '📆 定期定額買進');
+        const elProf = document.getElementById('filterProfit');
+        if (elProf) { elProf.textContent = '$' + formatNum(sumCost(dcaBuyRows), 0); elProf.style.color = ''; }
+        set('filterProfitRate', `共 ${dcaBuyRows.length} 筆`);
+        set('filterTabDivTitle', '📦 目前持股');
+        set('filterDividends', `${lotCount} 檔`);
+        set('filterLent', '「剩餘批次」可看每檔的先買先賣明細');
+        return;
       } else if (currentFilter === 'DCA_TAB') {
         if (subDashContainer) subDashContainer.style.gridTemplateColumns = 'repeat(4, 1fr)';
         if (subCardValContainer) subCardValContainer.style.display = 'block';
@@ -1631,7 +1632,7 @@
           uniqueStocksMap.forEach((us, key) => {
             const est = dividendEstimates[key] || { expCash: 0, expStock: 0 };
             const isUS = isUsStock(us);
-            const fxRate = isUS ? usdFx() : 1;
+            const fxRate = isUS ? getUsdRate() : 1;
             const price = (Number(us.currentPrice) || 0) * fxRate;
             const shares = us.shares;
 
@@ -1662,7 +1663,7 @@
           let currentHoldingsDivTotal = 0;
           stocks.forEach(st => {
             const isUS = isUsStock(st);
-            const fxRate = isUS ? usdFx() : 1;
+            const fxRate = isUS ? getUsdRate() : 1;
             (st.dividendHistory || []).forEach(dh => {
               currentHoldingsDivTotal += (Number(dh.cash) || 0) * fxRate;
             });
@@ -1707,7 +1708,7 @@
       let fCost = 0, fVal = 0, fDiv = 0, fLent = 0;
       filterStocks.forEach(s => {
         const isUS = isUsStock(s);
-        const fxRate = isUS ? usdFx() : 1;
+        const fxRate = isUS ? getUsdRate() : 1;
 
         const p = (Number(s.currentPrice) || 0) * fxRate;
         const cashD = (Number(s.cashDividends) || 0) * fxRate;
@@ -1725,7 +1726,7 @@
 
       const isCurrentUS = currentFilter === '美股複委託';
       const fUnit = isCurrentUS ? 'US$' : '$';
-      const fFx = isCurrentUS ? usdFx() : 1;
+      const fFx = isCurrentUS ? getUsdRate() : 1;
 
       document.getElementById('filterTabCostTitle').textContent = `📌 [${labelName}] 投入成本`;
       document.getElementById('filterCost').textContent = fUnit + formatNum(fCost / fFx, isCurrentUS ? 2 : 0);
@@ -1781,7 +1782,7 @@
 
       // 只挑出「有金額」的現金股利紀錄；股票股利(stockShares)不在轉存範圍內，刪除後就一併移除
       const isUS = isUsStock(stock);
-      const fxRate = isUS ? usdFx() : 1;
+      const fxRate = isUS ? getUsdRate() : 1;
       const transferItems = (stock.dividendHistory || [])
         .filter(h => Number(h.cash) > 0)
         .map(h => ({
@@ -1824,7 +1825,7 @@
       const body = document.getElementById('deleteStockDividendBody');
       if (body) {
         body.innerHTML = `
-          <p style="margin-top:0;">「${esc(stock.name)}」持有期間領過現金股利，要不要把這些紀錄轉存到「股利 → 非持股歷史」？${isUS ? '<br/><span style="font-size:0.8rem; color:#766c5a;">（美股金額已依目前匯率換算成台幣）</span>' : ''}</p>
+          <p style="margin-top:0;">「${esc(stock.name)}」持有期間領過現金股利，要不要把這些紀錄轉存到「股利 → 非持股歷史」？${isUS ? '<br/><span style="font-size:0.8rem; color:#766c5a;">（美股金額已依匯率 29 換算成台幣）</span>' : ''}</p>
           <table class="dividend-table">
             <thead><tr><th>年度</th><th>金額</th><th>筆數</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
@@ -1867,43 +1868,6 @@
       closeDeleteStockDividendModal();
     }
 
-    /* ====== 全部股票表格：方向鍵/Enter 在格子間移動 ====== */
-    function handleCellKey(event, row, col) {
-      if (event.isComposing || event.keyCode === 229) return; // 輸入法組字中不攔截方向鍵
-      const key = event.key;
-      const el = event.target;
-      const isTextField = el.type === 'text';
-      let targetRow = row;
-      let targetCol = col;
-      if (key === 'ArrowDown' || key === 'Enter') {
-        targetRow = row + 1;
-      } else if (key === 'ArrowUp') {
-        targetRow = row - 1;
-      } else if (key === 'ArrowRight') {
-        if (isTextField && el.selectionStart !== null && el.selectionEnd !== el.value.length) return;
-        targetCol = col + 1;
-      } else if (key === 'ArrowLeft') {
-        if (isTextField && el.selectionStart !== null && el.selectionStart !== 0) return;
-        targetCol = col - 1;
-      } else {
-        return;
-      }
-      const selector = `#stockGrid [data-row="${targetRow}"][data-col="${targetCol}"]`;
-      const targetEl = document.querySelector(selector);
-      if (targetEl) {
-        event.preventDefault();
-        targetEl.focus();
-        if (targetEl.select) targetEl.select();
-        requestAnimationFrame(() => {
-          if (document.activeElement !== targetEl) {
-            setTimeout(() => {
-              const stillThere = document.querySelector(selector);
-              if (stillThere) { stillThere.focus(); if (stillThere.select) stillThere.select(); }
-            }, 60);
-          }
-        });
-      }
-    }
 
     function deleteStockSale(index) {
       if (confirm('確定要刪除這筆股票賣出紀錄嗎？')) {
@@ -1915,663 +1879,6 @@
       }
     }
 
-    /* ====== HTML5 拖曳排序事件處理 ====== */
-    function onDragStart(e) {
-      const tr = e.target.closest('tr');
-      draggedStockId = Number(tr.getAttribute('data-id'));
-      tr.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    }
-
-    function onDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const tr = e.target.closest('tr');
-      if (tr && !tr.classList.contains('dragging')) {
-        tr.classList.add('drag-over');
-      }
-    }
-
-    function onDragLeave(e) {
-      const tr = e.target.closest('tr');
-      if (tr) tr.classList.remove('drag-over');
-    }
-
-    function onDrop(e, targetStockId) {
-      e.preventDefault();
-      const tr = e.target.closest('tr');
-      if (tr) tr.classList.remove('drag-over');
-
-      if (!draggedStockId || draggedStockId === Number(targetStockId)) return;
-
-      const fromIdx = stocks.findIndex(s => s.id === draggedStockId);
-      const toIdx = stocks.findIndex(s => s.id === Number(targetStockId));
-
-      if (fromIdx !== -1 && toIdx !== -1) {
-        recordSnapshot();
-        const [movedItem] = stocks.splice(fromIdx, 1);
-        stocks.splice(toIdx, 0, movedItem);
-        saveToStorage();
-        renderTabs();
-        renderTable();
-      }
-    }
-
-    function onDragEnd(e) {
-      const tr = e.target.closest('tr');
-      if (tr) tr.classList.remove('dragging');
-      document.querySelectorAll('tr').forEach(row => row.classList.remove('drag-over'));
-      draggedStockId = null;
-    }
-
-    /* ====== 快照日期標籤切換與整筆刪除 ====== */
-    function selectSnapshotDate(dateStr) {
-      selectedSnapshotDate = dateStr;
-      renderTable();
-    }
-
-    function deleteEntireSnapshot(dateStr) {
-      if (confirm(`確定要刪除整個【${dateStr}】的資產快照紀錄嗎？`)) {
-        let allSnaps = JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]');
-        allSnaps = allSnaps.filter(sp => sp.date !== dateStr);
-        localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(allSnaps));
-        
-        if (allSnaps.length > 0) {
-          selectedSnapshotDate = allSnaps[0].date;
-        } else {
-          selectedSnapshotDate = null;
-        }
-        renderTabs();
-        renderTable();
-      }
-    }
-
-    function deleteSnapshotItem(dateStr, itemIdx) {
-      if (confirm('確定要刪除這筆快照紀錄嗎？')) {
-        let allSnaps = JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]');
-        const snap = allSnaps.find(sp => sp.date === dateStr);
-        if (snap) {
-          snap.items.splice(itemIdx, 1);
-          allSnaps = allSnaps.filter(sp => sp.items.length > 0);
-          localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(allSnaps));
-          renderTabs();
-          renderTable();
-        }
-      }
-    }
-
-    /* ====== 一鍵紀錄資產快照 ====== */
-    function takeAssetSnapshot() {
-      const today = new Date().toISOString().slice(0, 10);
-      const targetAccounts = getAllAccounts();
-      const snapshotItems = stocks.filter(s => targetAccounts.includes(s.account));
-
-      if (snapshotItems.length === 0) {
-        alert('沒有找到任何持股可供記錄！');
-        return;
-      }
-
-      if (!confirm(`確定要記錄 ${today} 的資產快照嗎？（共 ${snapshotItems.length} 筆持股）`)) {
-        return;
-      }
-
-      let savedSnapshots = [];
-      const storedSnap = localStorage.getItem('ASSET_SNAPSHOTS_V1');
-      if (storedSnap) {
-        try { savedSnapshots = JSON.parse(storedSnap); } catch (e) {}
-      }
-
-      let existingSnap = savedSnapshots.find(sp => sp.date === today);
-      const newItems = snapshotItems.map(s => ({
-        account: s.account,
-        name: s.name,
-        code: s.code || '-',
-        shares: Number(s.shares) || 0,
-        totalCost: Number(s.totalCost) || 0,
-        currentPrice: Number(s.currentPrice) || 0,
-        marketVal: (Number(s.shares) || 0) * (Number(s.currentPrice) || 0),
-        profit: ((Number(s.shares) || 0) * (Number(s.currentPrice) || 0)) - (Number(s.totalCost) || 0)
-      }));
-
-      if (existingSnap) {
-        existingSnap.items = newItems;
-      } else {
-        savedSnapshots.unshift({
-          date: today,
-          items: newItems
-        });
-      }
-
-      localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(savedSnapshots));
-      selectedSnapshotDate = today;
-      alert(`📸 成功記錄 ${today} 的資產快照！已自動切換至【各股紀錄】分頁。`);
-      
-      setFilter('SNAPSHOT_LOGS');
-    }
-
-    /* ====== 捲動軸同步 ====== */
-    function setupScrollSync() {
-      const topWrapper = document.getElementById('topScrollWrapper');
-      const tableWrapper = document.getElementById('mainTableContainer');
-      if (!topWrapper || !tableWrapper) return;
-
-      let isSyncingTop = false;
-      let isSyncingTable = false;
-
-      topWrapper.addEventListener('scroll', () => {
-        if (!isSyncingTop) {
-          isSyncingTable = true;
-          tableWrapper.scrollLeft = topWrapper.scrollLeft;
-        }
-        isSyncingTop = false;
-      });
-
-      tableWrapper.addEventListener('scroll', () => {
-        if (!isSyncingTable) {
-          isSyncingTop = true;
-          topWrapper.scrollLeft = tableWrapper.scrollLeft;
-        }
-        isSyncingTable = false;
-      });
-    }
-
-    function syncScrollWidth() {
-      const grid = document.getElementById('stockGrid');
-      const dummy = document.getElementById('topScrollDummy');
-      if (grid && dummy) {
-        dummy.style.width = grid.scrollWidth + 'px';
-      }
-    }
-
-    function scrollToLatestYear() {
-      const topWrapper = document.getElementById('topScrollWrapper');
-      const tableWrapper = document.getElementById('mainTableContainer');
-      if (tableWrapper) {
-        tableWrapper.scrollLeft = tableWrapper.scrollWidth;
-      }
-      if (topWrapper) {
-        topWrapper.scrollLeft = topWrapper.scrollWidth;
-      }
-    }
-
-    /* ====== 新增股票與證券帳戶管理 ====== */
-    function openAddAccountModal() {
-      document.getElementById('newAccountName').value = '';
-      document.getElementById('addAccountModal').classList.add('open');
-    }
-
-    function closeAddAccountModal() {
-      document.getElementById('addAccountModal').classList.remove('open');
-    }
-
-    function submitAddAccount() {
-      const name = document.getElementById('newAccountName').value.trim();
-      if (!name) {
-        alert('請輸入證券帳戶名稱！');
-        return;
-      }
-      const allAccs = getAllAccounts();
-      if (allAccs.includes(name)) {
-        alert('此證券帳戶已存在！');
-        return;
-      }
-
-      recordSnapshot();
-      customAccounts.push(name);
-      saveToStorage();
-      renderTabs();
-      setFilter(name);
-      closeAddAccountModal();
-      alert(`已成功新增證券帳戶【${name}】！`);
-    }
-
-    function deleteCustomAccount(event, accName) {
-      event.stopPropagation();
-      const hasStocks = stocks.some(s => s.account === accName);
-      if (hasStocks) {
-        alert(`無法刪除【${accName}】！該帳戶內還有股票標的，請先將標的刪除或移動至其他帳戶。`);
-        return;
-      }
-
-      if (confirm(`確定要刪除證券帳戶【${accName}】分頁嗎？`)) {
-        recordSnapshot();
-        customAccounts = customAccounts.filter(a => a !== accName);
-        if (currentFilter === accName) {
-          currentFilter = 'ALL';
-        }
-        saveToStorage();
-        renderTabs();
-        renderTable();
-      }
-    }
-
-    function openAddStockModal() {
-      if (currentFilter === 'DIVIDENDS_TAB' && dividendsSubTab === 'past') {
-        handleAddNew();
-        return;
-      }
-      if (currentFilter === 'STOCK_SALES') {
-        if (salesSubTab === 'history') {
-          addSaleHistoryRow();
-        } else {
-          addStockSaleRow();
-        }
-        return;
-      }
-      if (currentFilter === 'STOCK_LENDING_TAB') {
-        if (lendingSubTab === 'income') {
-          addLendingIncomeRow();
-        } else {
-          addLendingRow();
-        }
-        return;
-      }
-      if (currentFilter === 'DCA_TAB') {
-        addDcaRow();
-        return;
-      }
-      document.getElementById('addModalTitle').textContent = '➕ 新增股票標的';
-      document.getElementById('newStockName').value = '';
-      document.getElementById('newStockCode').value = '';
-      document.getElementById('newStockShares').value = '';
-      document.getElementById('newStockTotalCost').value = '';
-      
-      const accSelect = document.getElementById('newStockAccount');
-      const allAccs = getAllAccounts();
-      accSelect.innerHTML = allAccs.map(acc => `<option value="${esc(acc)}">${esc(acc)}</option>`).join('');
-
-      if (allAccs.includes(currentFilter)) {
-        accSelect.value = currentFilter;
-      } else {
-        accSelect.value = allAccs[0] || '證券帳戶';
-      }
-      handleAutoDetectCategory();
-
-      document.getElementById('addStockModal').classList.add('open');
-    }
-
-    function closeAddStockModal() {
-      const modal = document.getElementById('addStockModal');
-      if (modal) modal.classList.remove('open');
-    }
-
-    function handleAutoDetectCategory() {
-      const acc = document.getElementById('newStockAccount').value;
-      const code = document.getElementById('newStockCode').value.trim();
-      const catSelect = document.getElementById('newStockCategory');
-      if (!catSelect) return;
-
-      if (acc === '美股複委託') {
-        catSelect.value = '美股';
-      } else if (code.startsWith('00')) {
-        catSelect.value = 'ETF';
-      } else {
-        catSelect.value = '台股';
-      }
-    }
-
-    function submitAddNewStock() {
-      const name = document.getElementById('newStockName').value.trim();
-      if (!name) {
-        alert('請輸入股票/ETF名稱！');
-        return;
-      }
-
-      const code = document.getElementById('newStockCode').value.trim();
-      const account = document.getElementById('newStockAccount').value;
-      const category = document.getElementById('newStockCategory').value;
-      const shares = parseFloat(document.getElementById('newStockShares').value) || 0;
-      const totalCost = parseFloat(document.getElementById('newStockTotalCost').value) || 0;
-
-      recordSnapshot();
-      const newItem = {
-        id: Date.now(),
-        name: name,
-        code: code,
-        category: category,
-        account: account,
-        shares: shares,
-        totalCost: totalCost,
-        currentPrice: 0,
-        marketVal: 0,
-        cashDividends: 0,
-        stockShares: 0,
-        dividendHistory: [],
-        lentShares: 0
-      };
-
-      stocks.unshift(newItem);
-      saveToStorage();
-      renderTabs();
-      renderTable();
-      closeAddStockModal();
-    }
-
-    /* ====== 分離式股利彈窗 ====== */
-    /* ====== Task 5: 歷年股利總合 - 單一年度所有持股現金股利明細彈窗 ====== */
-    function openYearlyDivDetailModal(rawKey, displayYear) {
-      const rows = [];
-      let total = 0;
-
-      stocks.forEach(st => {
-        const isUS = isUsStock(st);
-        const fxRate = isUS ? usdFx() : 1;
-        (st.dividendHistory || []).forEach(dh => {
-          if (normalizeYearKey(dh.year) !== rawKey) return;
-          const cash = (Number(dh.cash) || 0) * fxRate;
-          if (cash <= 0) return;
-          rows.push({ name: st.name, date: dh.cashDate || '—', cash });
-          total += cash;
-        });
-      });
-
-      rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
-
-      const titleEl = document.getElementById('yearlyDivDetailTitle');
-      if (titleEl) titleEl.textContent = `📅 ${displayYear} 年度現金股利明細`;
-
-      const bodyEl = document.getElementById('yearlyDivDetailBody');
-      if (bodyEl) {
-        bodyEl.innerHTML = rows.length ? rows.map(r => `
-          <tr>
-            <td>${esc(r.name)}</td>
-            <td class="font-mono">${esc(r.date)}</td>
-            <td class="font-mono">$${formatNum(r.cash, 0)}</td>
-          </tr>
-        `).join('') : `<tr><td colspan="3" style="color:#93897a;">該年度沒有現金股利紀錄</td></tr>`;
-      }
-
-      const totalEl = document.getElementById('yearlyDivDetailTotal');
-      if (totalEl) totalEl.textContent = '$' + formatNum(total, 0);
-
-      const modal = document.getElementById('yearlyDivDetailModal');
-      if (modal) modal.classList.add('open');
-    }
-
-    function closeYearlyDivDetailModal() {
-      const modal = document.getElementById('yearlyDivDetailModal');
-      if (modal) modal.classList.remove('open');
-    }
-
-    /* ====== 通用備註彈窗：目前用於「股票賣出明細」的備考欄位 ====== */
-    let noteModalContext = null; // { type: 'sale', index }
-
-    function openNoteModal(type, index) {
-      noteModalContext = { type, index };
-      let currentNote = '';
-      if (type === 'sale' && stockSales[index]) {
-        currentNote = stockSales[index].note || '';
-      }
-      const titleEl = document.getElementById('noteModalTitle');
-      if (titleEl) titleEl.textContent = '📝 備註';
-      const textarea = document.getElementById('noteModalTextarea');
-      if (textarea) textarea.value = currentNote;
-      const modal = document.getElementById('noteModal');
-      if (modal) modal.classList.add('open');
-    }
-
-    function closeNoteModal() {
-      const modal = document.getElementById('noteModal');
-      if (modal) modal.classList.remove('open');
-      noteModalContext = null;
-    }
-
-    function saveNoteModal() {
-      if (!noteModalContext) return;
-      const textarea = document.getElementById('noteModalTextarea');
-      const value = textarea ? textarea.value : '';
-      recordSnapshot();
-      if (noteModalContext.type === 'sale' && stockSales[noteModalContext.index]) {
-        stockSales[noteModalContext.index].note = value;
-      }
-      saveToStorage();
-      closeNoteModal();
-      renderTable();
-    }
-
-    function openDividendModal(stockId, type = 'cash') {
-      currentModalType = type;
-      let target = null;
-      let isMerged = false;
-
-      if (typeof stockId === 'string' && stockId.startsWith('merged_')) {
-        isMerged = true;
-        const mergedList = getMergedTaiwanStocks();
-        target = mergedList.find(m => m.id === stockId);
-      } else {
-        target = stocks.find(s => s.id === Number(stockId));
-      }
-
-      if (!target) return;
-      currentEditingStockId = stockId;
-
-      const isUS = isUsStock(target);
-      const fxRate = isUS ? usdFx() : 1;
-      const unitSymbol = isUS ? 'US$' : '$';
-
-      const curPrice = (Number(target.currentPrice) || 0) * fxRate;
-      const modalHead = document.getElementById('dividendModalHead');
-
-      if (type === 'cash') {
-        document.getElementById('modalTitle').textContent = `💰 ${target.name} (${target.code || '-'}) - 歷年現金股利明細 ${isMerged ? '(跨帳戶合計)' : ''} ${isUS ? '[美金]' : ''}`;
-        document.getElementById('modalSubTitle').textContent = `記錄每年現金股利金額與入帳時間`;
-        document.getElementById('modalFooterLabel').textContent = '現金股利總計：';
-        modalHead.innerHTML = `
-          <tr style="background:#f1f5f9; color:#475569;">
-            <th style="width: 100px;">發放年度</th>
-            <th style="width: 180px;">現金股利匯入時間</th>
-            <th style="width: 180px; color:#d97706;">現金股利金額 (${unitSymbol})</th>
-            <th style="width: 60px;">刪除</th>
-          </tr>
-        `;
-      } else {
-        document.getElementById('modalTitle').textContent = `📈 ${target.name} (${target.code || '-'}) - 歷年股票股利明細 ${isMerged ? '(跨帳戶合計)' : ''}`;
-        document.getElementById('modalSubTitle').textContent = `最新現價：${unitSymbol}${formatNum(curPrice / fxRate, isUS ? 2 : 2)}（依現價折算扣抵市值）`;
-        document.getElementById('modalFooterLabel').textContent = '股票股利折算總市值：';
-        modalHead.innerHTML = `
-          <tr style="background:#f1f5f9; color:#475569;">
-            <th style="width: 90px;">發放年度</th>
-            <th style="width: 160px;">股票股利匯入時間</th>
-            <th style="width: 130px; color:#1d4ed8;">配股股數 (股)</th>
-            <th style="width: 150px;">現價折算市值 (${unitSymbol})</th>
-            <th style="width: 50px;">刪除</th>
-          </tr>
-        `;
-      }
-      
-      const history = (target.dividendHistory || []).map(h => ({
-        year: h.year || 2024,
-        cashDate: h.cashDate || '',
-        cash: Number(h.cash !== undefined ? h.cash : 0),
-        stockDate: h.stockDate || '',
-        stockShares: Number(h.stockShares !== undefined ? h.stockShares : (h.stock || 0))
-      }));
-
-      renderDividendModalRows(history, curPrice / fxRate, isReadOnly = isMerged, unitSymbol);
-      
-      const btnAdd = document.getElementById('btnAddDivRow');
-      const btnSave = document.getElementById('btnSaveDivModal');
-      if (isMerged) {
-        if (btnAdd) btnAdd.style.display = 'none';
-        if (btnSave) btnSave.style.display = 'none';
-      } else {
-        if (btnAdd) btnAdd.style.display = 'block';
-        if (btnSave) btnSave.style.display = 'block';
-      }
-
-      document.getElementById('dividendModal').classList.add('open');
-    }
-
-    function closeDividendModal() {
-      document.getElementById('dividendModal').classList.remove('open');
-      currentEditingStockId = null;
-    }
-
-    function renderDividendModalRows(history, currentPrice, isReadOnly = false, unitSymbol = '$') {
-      const tbody = document.getElementById('dividendTableBody');
-      let totalAmount = 0;
-
-      if (currentModalType === 'cash') {
-        tbody.innerHTML = history.map((item, idx) => {
-          const cash = Number(item.cash) || 0;
-          totalAmount += cash;
-
-          return `
-            <tr>
-              <td>
-                ${isReadOnly ? `<span class="font-bold">${esc(item.year)}</span>` : `
-                  <input type="text" class="cell-input" style="border:1px solid #cbd5e1; font-weight:700;" value="${esc(item.year || 2024)}" onchange="updateDividendRow(${idx}, 'year', this.value)" />
-                `}
-              </td>
-              <td>
-                ${isReadOnly ? `<span>${esc(item.cashDate || '-')}</span>` : `
-                  <input type="text" class="cell-input" style="border:1px solid #cbd5e1; font-size:0.85rem;" placeholder="YYYY-MM-DD" value="${esc(item.cashDate || '')}" onchange="updateDividendRow(${idx}, 'cashDate', this.value)" />
-                `}
-              </td>
-              <td>
-                ${isReadOnly ? `<span class="font-mono font-bold" style="color:#d97706;">${unitSymbol}${formatNum(cash, 0)}</span>` : `
-                  <input type="number" step="any" class="cell-input font-mono" style="border:1px solid #cbd5e1; color:#d97706; font-weight:700;" value="${esc(cash)}" onchange="updateDividendRow(${idx}, 'cash', this.value)" />
-                `}
-              </td>
-              <td>
-                ${isReadOnly ? `<span style="color:#94a3b8;">-</span>` : `
-                  <button class="btn-del" title="刪除此年度" onclick="removeDividendRow(${idx})">✕</button>
-                `}
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        document.getElementById('modalTotalDiv').style.color = '#9c7c52';
-        document.getElementById('modalTotalDiv').textContent = unitSymbol + formatNum(totalAmount, 0);
-
-      } else {
-        tbody.innerHTML = history.map((item, idx) => {
-          const sShares = Number(item.stockShares) || 0;
-          const stockVal = sShares * currentPrice;
-          totalAmount += stockVal;
-
-          return `
-            <tr>
-              <td>
-                ${isReadOnly ? `<span class="font-bold">${esc(item.year)}</span>` : `
-                  <input type="text" class="cell-input" style="border:1px solid #cbd5e1; font-weight:700;" value="${esc(item.year || 2024)}" onchange="updateDividendRow(${idx}, 'year', this.value)" />
-                `}
-              </td>
-              <td>
-                ${isReadOnly ? `<span>${esc(item.stockDate || '-')}</span>` : `
-                  <input type="text" class="cell-input" style="border:1px solid #cbd5e1; font-size:0.85rem;" placeholder="YYYY-MM-DD" value="${esc(item.stockDate || '')}" onchange="updateDividendRow(${idx}, 'stockDate', this.value)" />
-                `}
-              </td>
-              <td>
-                ${isReadOnly ? `<span class="font-mono font-bold" style="color:#1d4ed8;">${formatNum(sShares, 0)}</span>` : `
-                  <input type="number" step="any" class="cell-input font-mono" style="border:1px solid #cbd5e1; color:#1d4ed8; font-weight:700;" value="${esc(sShares)}" onchange="updateDividendRow(${idx}, 'stockShares', this.value)" />
-                `}
-              </td>
-              <td class="font-mono font-bold" style="background:#f8fafc; color:#1d4ed8;">
-                ${unitSymbol}${formatNum(stockVal, 0)}
-              </td>
-              <td>
-                ${isReadOnly ? `<span style="color:#94a3b8;">-</span>` : `
-                  <button class="btn-del" title="刪除此年度" onclick="removeDividendRow(${idx})">✕</button>
-                `}
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        document.getElementById('modalTotalDiv').style.color = '#5c5445';
-        document.getElementById('modalTotalDiv').textContent = unitSymbol + formatNum(totalAmount, 0);
-      }
-    }
-
-    function addDividendYear() {
-      const stock = stocks.find(s => s.id === Number(currentEditingStockId));
-      if (!stock) return;
-      if (!stock.dividendHistory) stock.dividendHistory = [];
-      const lastYear = stock.dividendHistory.length > 0 ? Math.max(...stock.dividendHistory.map(h => Number(h.year) || 2024)) + 1 : new Date().getFullYear();
-      stock.dividendHistory.push({ year: lastYear, cashDate: '', cash: 0, stockDate: '', stockShares: 0 });
-      const isUS = isUsStock(stock);
-      renderDividendModalRows(stock.dividendHistory, Number(stock.currentPrice) || 0, false, isUS ? 'US$' : '$');
-    }
-
-    function updateDividendRow(index, field, value) {
-      const stock = stocks.find(s => s.id === Number(currentEditingStockId));
-      if (!stock || !stock.dividendHistory[index]) return;
-      stock.dividendHistory[index][field] = (field === 'cash' || field === 'stockShares') ? (parseFloat(value) || 0) : value;
-      const isUS = isUsStock(stock);
-      renderDividendModalRows(stock.dividendHistory, Number(stock.currentPrice) || 0, false, isUS ? 'US$' : '$');
-    }
-
-    function removeDividendRow(index) {
-      const stock = stocks.find(s => s.id === Number(currentEditingStockId));
-      if (!stock || !stock.dividendHistory) return;
-      stock.dividendHistory.splice(index, 1);
-      const isUS = isUsStock(stock);
-      renderDividendModalRows(stock.dividendHistory, Number(stock.currentPrice) || 0, false, isUS ? 'US$' : '$');
-    }
-
-    function saveDividendModal() {
-      const stock = stocks.find(s => s.id === Number(currentEditingStockId));
-      if (stock) {
-        recordSnapshot();
-        const cashSum = (stock.dividendHistory || []).reduce((sum, h) => sum + (Number(h.cash) || 0), 0);
-        const stockSharesSum = (stock.dividendHistory || []).reduce((sum, h) => sum + (Number(h.stockShares) || 0), 0);
-        stock.cashDividends = cashSum;
-        stock.stockShares = stockSharesSum;
-        saveToStorage();
-        renderTable();
-      }
-      closeDividendModal();
-    }
-
-    function exportStockData() {
-      const exportObj = {
-        stocks: stocks,
-        pastColumns: pastColumns,
-        customAccounts: customAccounts,
-        stockSales: stockSales,
-        salesHistory: salesHistory,
-        stockLending: stockLending,
-        lendingIncomeRows: lendingIncomeRows,
-        lendingIncomeManualYearly: lendingIncomeManualYearly,
-        dcaRows: dcaRows,
-        snapshots: JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]'),
-        retirement: (typeof getRetirementSettings === 'function') ? getRetirementSettings() : undefined,
-        version: "V56",
-        exportDate: new Date().toISOString()
-      };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-      const dl = document.createElement('a');
-      dl.setAttribute("href", dataStr);
-      dl.setAttribute("download", `股票資產備份_${new Date().toISOString().slice(0,10)}.json`);
-      dl.click();
-    }
-
-    function importStockData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          recordSnapshot();
-          let result;
-          if (Array.isArray(imported)) {
-            result = mergeApplyAllData({ stocks: imported });
-          } else if (imported && imported.stocks) {
-            result = mergeApplyAllData(imported);
-          } else {
-            alert('匯入失敗：檔案格式不正確');
-            return;
-          }
-          alert(`匯入完成！\n新增：${result.added} 筆\n略過（本地已有，未覆蓋）：${result.skipped} 筆`);
-        } catch (err) {
-          alert('匯入失敗：檔案格式不正確');
-        }
-      };
-      reader.readAsText(file);
-    }
 
     function formatNum(num, decimals = 0) {
       if (num === null || num === undefined || isNaN(num)) return '0';

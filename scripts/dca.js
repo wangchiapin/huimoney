@@ -1,6 +1,6 @@
     /* ====== 定期定額分頁 (DCA)｜dcaRows 相關的渲染與編輯函式 ======
        此檔案從 stock.js 拆分出來（架構重構 Phase 3），沿用 stock.js 頂部宣告的
-       全域狀態變數（stocks / customAccounts / dcaRows ... 等），
+       全域狀態變數（stocks / customAccounts / dcaRows / yfDetail ... 等），
        靠瀏覽器對 classic <script> 標籤的共用全域作用域運作，
        不需要 import/export，index.html 只要確保這個檔案在 stock.js 之前或之後載入皆可
        （所有呼叫都發生在 window.onload 之後，屆時所有 <script> 都已執行完畢）。 ====== */

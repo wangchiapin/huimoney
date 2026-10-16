@@ -15,6 +15,10 @@ let insurancePolicies = [];
 try { insurancePolicies = JSON.parse(localStorage.getItem('INSURANCE_POLICIES_V1')) || []; } catch (e) { insurancePolicies = []; }
 
 function saveInsuranceToStorage() {
+  saveInsuranceLocalOnly();
+}
+
+function saveInsuranceLocalOnly() {
   try {
     localStorage.setItem('INSURANCE_POLICIES_V1', JSON.stringify(insurancePolicies));
   } catch (e) {

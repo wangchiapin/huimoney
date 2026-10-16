@@ -11,7 +11,10 @@
   <link rel="stylesheet" href="styles/stock.css">
   <link rel="stylesheet" href="styles/insurance.css">
   <link rel="stylesheet" href="styles/tips-widget.css">
+  <link rel="stylesheet" href="styles/overview.css">
+  <link rel="stylesheet" href="styles/stmt-import.css">
   <link rel="stylesheet" href="styles/retirement.css">
+  <link rel="stylesheet" href="styles/mobile.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <!-- ExcelJS：僅供「匯出全部資料 (Excel)」功能使用，支援儲存格顏色/格式 -->
@@ -22,13 +25,19 @@
 
   <div class="app-header">
     <div class="app-header-title">📋 個人財務資產狀況管理</div>
+    <button type="button" class="mb-header-more" id="mbHeaderMore" onclick="mbToggleHeaderMenu(event)" aria-label="匯率與匯入">⋯</button>
     <div class="app-tabs">
-      <button class="app-tab-btn active" id="tabBtnFinance" onclick="switchAppView('finance')">📋 財務總覽</button>
-      <button class="app-tab-btn" id="tabBtnStock" onclick="switchAppView('stock')">📈 股票管理</button>
-      <button class="app-tab-btn" id="tabBtnInsurance" onclick="switchAppView('insurance')">🛡️ 保險總覽</button>
-      <button class="app-tab-btn" id="tabBtnRetirement" onclick="switchAppView('retirement')">🎯 退休試算</button>
+      <button class="app-tab-btn active" id="tabBtnFinance" onclick="switchAppView('finance')"><span class="tab-ic">📋</span> <span class="tab-lb">財務總覽</span></button>
+      <button class="app-tab-btn" id="tabBtnStock" onclick="switchAppView('stock')"><span class="tab-ic">📈</span> <span class="tab-lb">股票管理</span></button>
+      <button class="app-tab-btn" id="tabBtnInsurance" onclick="switchAppView('insurance')"><span class="tab-ic">🛡️</span> <span class="tab-lb">保險總覽</span></button>
+      <button class="app-tab-btn" id="tabBtnOverview" onclick="switchAppView('overview')"><span class="tab-ic">📊</span> <span class="tab-lb">資產總覽</span></button>
+      <button class="app-tab-btn" id="tabBtnRetirement" onclick="switchAppView('retirement')"><span class="tab-ic">🎯</span> <span class="tab-lb">退休試算</span></button>
     </div>
     <div class="app-header-cloud">
+      <label class="usd-rate-box" title="股票管理換算美股台幣用的預設美元匯率（財務總覽每期另有自己的匯率）">💵 美元匯率
+        <input type="number" id="usdRateInput" step="0.01" min="0" inputmode="decimal" onchange="onUsdRateInputChange(this)">
+      </label>
+      <button class="btn btn-outline stmt-open-btn" id="stmtImportBtn" onclick="openStmtImport()">📥 匯入對帳單</button>
       <span id="syncStatus" title="資料只存在這個瀏覽器裡，清除瀏覽資料或換裝置就看不到，請用「設定 → 匯出備份」定期備份">💾 資料僅存在本機，請定期匯出備份</span>
     </div>
   </div>
@@ -100,7 +109,7 @@
         <div class="stat-card">
           <div class="stat-title">全體總投入成本</div>
           <div class="stat-value font-mono" id="summaryCost">$0</div>
-          <div class="stat-desc">台股與外幣本金合計 (美股依目前匯率換算)</div>
+          <div class="stat-desc">台股與外幣本金合計 (美股以匯率 <span id="usdRateDesc">29</span> 計算)</div>
         </div>
         <div class="stat-card">
           <div class="stat-title">全體目前總市值</div>
@@ -154,9 +163,8 @@
       <button class="btn" id="btnAddYear" style="display:none; color:#5c5445; border-color:#ddd5c4; background:#fdfbf7;" onclick="handleAddYear()">📅 新增新年度</button>
 
       <!-- 股票分析圖按鈕 (位於新增股票與計算機中間) -->
+      <button class="btn btn-outline" id="btnUpdatePrices" onclick="updateStockPrices()" title="用每天收盤後自動抓的收盤價與美元匯率，更新有填股票代號的台股、美股">💹 更新股價與匯率</button>
       <button class="btn btn-outline" id="btnStockAnalysis" onclick="openStockAnalysisModal()">📊 股票分析圖</button>
-      <!-- 讀取每天自動更新的收盤價與匯率（data/prices.json） -->
-      <button class="btn btn-outline" id="btnUpdatePrices" onclick="updatePricesFromFile()" title="用每天自動更新的收盤價與美元匯率更新「現價」">💹 更新股價與匯率</button>
 
       <!-- 計算機按鈕 (位於設定左邊) -->
       <button class="btn btn-calc" onclick="toggleCalculator()">🧮 計算機</button>
@@ -232,6 +240,14 @@
       </div>
     </div>
 
+    <!-- 股票買進分頁專屬：次頁籤切換列 -->
+    <div class="sales-sub-bar" id="buysSubBar" style="display:none;">
+      <div class="sales-sub-toggle">
+        <button class="sales-sub-btn active" id="subBtnBuyList" onclick="setBuysSubTab('list')">📋 買進明細</button>
+        <button class="sales-sub-btn" id="subBtnBuyLots" onclick="setBuysSubTab('lots')">🧺 剩餘批次（先買先賣）</button>
+      </div>
+    </div>
+
     <!-- 股票借出分頁專屬：次頁籤切換列 -->
     <div class="sales-sub-bar" id="lendingSubBar" style="display:none;">
       <div class="sales-sub-toggle">
@@ -287,7 +303,7 @@
 
     <div class="help-tips">
       <span>💡 <strong>操作指南：</strong></span>
-      <span>• 點擊上方 <strong>「⚙️ 設定」</strong> 可進行新增證券、匯出與匯入備份；在表格內可直接輸入新資料、使用 <strong>方向鍵/Enter鍵</strong> 移動、選取複製多格、或使用 <strong>Ctrl + Z</strong> 復原！美股帳戶與股利預設以美金計算，總計時依目前美元匯率折算台幣。</span>
+      <span>• 點擊上方 <strong>「⚙️ 設定」</strong> 可進行新增證券、匯出與匯入備份；在表格內可直接輸入新資料、使用 <strong>方向鍵/Enter鍵</strong> 移動、選取複製多格、或使用 <strong>Ctrl + Z</strong> 復原！美股帳戶與股利預設以美金計算，總計時以標題列的「💵 美元匯率」折算台幣。</span>
     </div>
 
   <!-- 新增證券帳戶彈窗 -->
@@ -467,6 +483,73 @@
     </div>
   </div>
 
+  <!-- 股票買進：彈窗新增（存檔時會自動加進持股） -->
+  <div class="modal-overlay" id="addBuyModal">
+    <div class="modal-card" style="width: 560px;">
+      <div class="modal-header">
+        <h3 style="font-size:1.05rem; font-weight:700;">📈 新增買進</h3>
+        <button class="btn-del" style="font-size:1.2rem;" onclick="closeAddBuyModal()">✕</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">日期 <span style="color:#b6533c;">*</span>（例如 1151016）</label>
+            <input type="text" id="buyModalDate" class="form-control font-mono" autocomplete="off" placeholder="民國年月日" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">證券帳戶 <span style="color:#b6533c;">*</span></label>
+            <select id="buyModalAccount" class="form-control" onchange="onBuyModalInput('account')" onkeydown="handleBuyModalKey(event)"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">名稱 <span style="color:#b6533c;">*</span></label>
+            <input type="text" id="buyModalName" class="form-control" list="stockNameDatalist" autocomplete="off" placeholder="例：台積電" style="font-weight:700;" oninput="onBuyModalInput('name')" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">股數 <span style="color:#b6533c;">*</span></label>
+            <input type="number" step="any" id="buyModalShares" class="form-control font-mono" oninput="onBuyModalInput('shares')" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">成交價</label>
+            <input type="number" step="any" id="buyModalPrice" class="form-control font-mono" oninput="onBuyModalInput('price')" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">成交金額（自動計算）</label>
+            <div id="buyModalAmount" class="font-mono" style="padding:8px 10px; border:1px dashed #ddd5c4; border-radius:6px; background:#fdfbf7; font-size:0.85rem; font-weight:700;">$0</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">手續費</label>
+            <input type="number" step="any" id="buyModalFee" class="form-control font-mono" oninput="onBuyModalInput('fee')" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">成本 ($)</label>
+            <input type="number" step="any" id="buyModalCost" class="form-control font-mono font-bold" oninput="onBuyModalInput('cost')" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">類型</label>
+            <select id="buyModalType" class="form-control" onkeydown="handleBuyModalKey(event)">
+              <option value="一般">一般</option>
+              <option value="定期定額">定期定額</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">備註</label>
+            <input type="text" id="buyModalNote" class="form-control" autocomplete="off" onkeydown="handleBuyModalKey(event)" />
+          </div>
+          <div class="form-group full">
+            <div id="buyModalHoldingInfo" class="buy-modal-info"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:0.75rem; color:#766c5a; line-height:1.5;">
+          成交金額＝股數×成交價；成本＝成交金額＋手續費（會自動帶入，也可以直接改）。存檔後持股的股數、成本會跟著加上去。
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeAddBuyModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitAddBuyModal()">確認新增</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 股票賣出明細：彈窗式新增賣出紀錄（欄位與計算規則同表格） -->
   <div class="modal-overlay" id="addSaleModal">
     <div class="modal-card" style="width: 560px;">
@@ -482,7 +565,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">名稱 <span style="color:#b6533c;">*</span></label>
-            <input type="text" id="saleModalName" class="form-control" autocomplete="off" placeholder="例：台積電" style="font-weight:700;" onkeydown="handleSaleModalKey(event)" />
+            <input type="text" id="saleModalName" class="form-control" autocomplete="off" placeholder="例：台積電" style="font-weight:700;" oninput="onSaleModalFifoToggle(true)" onkeydown="handleSaleModalKey(event)" />
           </div>
           <div class="form-group">
             <label class="form-label">股數</label>
@@ -528,6 +611,15 @@
           <div class="form-group">
             <label class="form-label">價差 / 報酬率（自動計算）</label>
             <div id="saleModalPreview" class="font-mono" style="padding:8px 10px; border:1px dashed #ddd5c4; border-radius:6px; background:#fdfbf7; font-size:0.85rem; font-weight:700;">-</div>
+          </div>
+          <div class="form-group full">
+            <div class="sale-fifo-box" style="padding:10px 12px;">
+              <label class="sale-fifo-check"><input type="checkbox" id="saleModalFifo" onchange="onSaleModalFifoToggle()" /> 同時從持股扣掉（先買先賣）</label>
+              <div class="sale-fifo-detail" id="saleModalFifoDetail">
+                <select id="saleModalHolding" class="form-control" onchange="onSaleModalFifoRefresh()"></select>
+                <div id="saleModalFifoInfo" style="font-size:0.8rem; color:#5c5445; line-height:1.5;"></div>
+              </div>
+            </div>
           </div>
           <div class="form-group full">
             <label class="form-label">備註</label>
@@ -621,6 +713,7 @@
   </div>
   <!-- /#stockView -->
 
+  <!-- 🎯 退休試算：內容由 scripts/retirement.js 產生 -->
   <div id="retirementView" style="display:none;">
     <div class="ret-page">
       <div class="ret-disclaimer">
@@ -652,6 +745,11 @@
       <div class="ret-group"><h3>📊 逐年資產變化明細 <small>（我想退休的年齡、開始領專戶的年齡那一年會標亮，修改上面的設定會即時更新）</small></h3><div id="retDetail"></div></div>
       <div style="text-align:right;margin-top:12px;"><button class="btn btn-outline" onclick="retResetDefaults()">↩️ 還原成範例數字</button></div>
     </div>
+  </div>
+
+  <!-- 📊 資產總覽：內容由 scripts/overview.js 產生（只看不改） -->
+  <div id="overviewView" style="display:none;">
+    <div id="overviewContent"></div>
   </div>
 
   <div id="insuranceView" style="display:none;">
@@ -810,13 +908,24 @@
   <script src="scripts/stock-lending.js"></script>
   <script src="scripts/dividends.js"></script>
   <script src="scripts/stock-sales.js"></script>
+  <script src="scripts/stock-buys.js"></script>
+  <script src="scripts/stmt-parsers.js"></script>
+  <script src="scripts/stmt-import.js"></script>
   <script src="scripts/stock.js"></script>
+  <script src="scripts/stock-sync.js"></script>
+  <script src="scripts/stock-calculator.js"></script>
+  <script src="scripts/stock-table.js"></script>
+  <script src="scripts/stock-snapshots.js"></script>
+  <script src="scripts/stock-add.js"></script>
+  <script src="scripts/stock-modals.js"></script>
+  <script src="scripts/stock-price.js"></script>
   <script src="scripts/stock-analysis.js"></script>
-  <script src="scripts/prices.js"></script>
   <script src="scripts/insurance.js"></script>
+  <script src="scripts/overview.js"></script>
   <script src="scripts/retirement.js"></script>
   <script src="scripts/export-excel.js"></script>
   <script src="scripts/import-excel.js"></script>
   <script src="scripts/tips-widget.js"></script>
+  <script src="scripts/mobile.js"></script>
 </body>
 </html>

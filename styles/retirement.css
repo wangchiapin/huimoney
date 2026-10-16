@@ -49,3 +49,4 @@
 .ret-help:hover, .ret-help:focus { background: var(--primary); color: #fff; outline: none; }
 .ret-help-text { display: none; margin-top: 4px; padding: 8px 10px; background: #f3ecd8; border-radius: 6px; font-size: 12px; line-height: 1.7; color: var(--text-main); font-weight: normal; }
 .ret-help-text.open { display: block; }
+@media (max-width: 600px) { .ret-grid { grid-template-columns: 1fr; } .ret-slider-row { min-width: 0; } .ret-acc-grid { grid-template-columns: 1fr; } }

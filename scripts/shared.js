@@ -1,4 +1,4 @@
-        /* ====== 共用小工具：財務總覽 Excel 匯出/匯入用的「已封存」標記字首，
+    /* ====== 共用小工具：財務總覽 Excel 匯出/匯入用的「已封存」標記字首，
        讓封存項目也能完整匯出、之後合併匯入時自動以封存狀態還原 ====== */
     const FIN_ARCHIVE_MARK = '🗄️[已封存] ';
 
@@ -52,17 +52,6 @@
     function isUsStock(stock) {
       if (!stock) return false;
       return stock.account === '美股複委託' || stock.category === '美股';
-    }
-
-    /* ====== 美元匯率：預設 29；有抓到 data/prices.json 的匯率就用抓到的（存在瀏覽器） ====== */
-    const USD_FX_KEY = 'USD_FX_V1';
-    function usdFx() {
-      try {
-        const v = JSON.parse(localStorage.getItem(USD_FX_KEY) || 'null');
-        const r = v && Number(v.rate);
-        if (r > 15 && r < 60) return r;
-      } catch (e) {}
-      return 29;
     }
 
     /* ====== 共用小工具：手機數字鍵盤 (inputmode="decimal")
@@ -132,20 +121,32 @@
       }, isError ? 6000 : 3000);
     }
 
+    /* ====== huimoney：密碼鎖定、子分頁隱藏都已拿掉 ======
+       All-MoneyBook 的程式很多地方會問「這頁有沒有鎖、這個分頁有沒有藏起來」，
+       這裡一律回答「沒有」，其他檔案就能跟 All-MoneyBook 保持一樣，之後同步比較容易。 */
+    function isPageLocked() { return false; }
+    function isFieldLocked() { return false; }
+    function isTabHidden() { return false; }
+    function lockPlaceholderHtml() { return ''; }
+
     /* ====== 分頁切換：個人財務資產狀況管理 <-> 股票管理 ====== */
     function switchAppView(view) {
       const financeView = document.getElementById('financeView');
       const stockView = document.getElementById('stockView');
       const insuranceView = document.getElementById('insuranceView');
+      const overviewView = document.getElementById('overviewView');
       const tabFinance = document.getElementById('tabBtnFinance');
       const tabStock = document.getElementById('tabBtnStock');
       const tabInsurance = document.getElementById('tabBtnInsurance');
+      const tabOverview = document.getElementById('tabBtnOverview');
       const retirementView = document.getElementById('retirementView');
       const tabRetirement = document.getElementById('tabBtnRetirement');
 
       financeView.style.display = 'none';
       stockView.style.display = 'none';
       if (insuranceView) insuranceView.style.display = 'none';
+      if (overviewView) overviewView.style.display = 'none';
+      if (tabOverview) tabOverview.classList.remove('active');
       if (retirementView) retirementView.style.display = 'none';
       if (tabRetirement) tabRetirement.classList.remove('active');
       tabFinance.classList.remove('active');
@@ -159,14 +160,18 @@
         // 讓對應的分頁/子分頁重新捲動到最新一筆資料
         if (typeof lastEnteredTabContext !== 'undefined') lastEnteredTabContext = null;
         if (typeof renderTable === 'function') renderTable();
-      } else if (view === 'retirement') {
-        if (retirementView) retirementView.style.display = 'block';
-        if (tabRetirement) tabRetirement.classList.add('active');
-        if (typeof renderRetirement === 'function') renderRetirement();
       } else if (view === 'insurance') {
         if (insuranceView) insuranceView.style.display = 'block';
         if (tabInsurance) tabInsurance.classList.add('active');
         if (typeof renderInsuranceTable === 'function') renderInsuranceTable();
+      } else if (view === 'retirement') {
+        if (retirementView) retirementView.style.display = 'block';
+        if (tabRetirement) tabRetirement.classList.add('active');
+        if (typeof renderRetirement === 'function') renderRetirement();
+      } else if (view === 'overview') {
+        if (overviewView) overviewView.style.display = 'block';
+        if (tabOverview) tabOverview.classList.add('active');
+        if (typeof showOverview === 'function') showOverview();
       } else {
         financeView.style.display = 'block';
         tabFinance.classList.add('active');
@@ -178,3 +183,51 @@
       }
       if (typeof saveNavState === 'function') saveNavState();
     }
+
+    /* ====== 全站美元匯率預設值 ======
+       股票管理、股票分析圖、小提醒卡片、Excel 匯出/匯入換算美股台幣時，都用這個值
+       （以前寫死 29）。財務總覽每個日期欄位仍然用各自的「美金匯率」那一列，不受影響。
+       存在本機 (USD_DEFAULT_RATE_V1)。每天自動抓到的匯率（data/prices.json）有更新時會自動套用（stock-price.js），
+       也可以在標題列自己改；自己改的數字會用到下一次抓到新匯率為止。
+       舊版 huimoney 存在 USD_FX_V1 的匯率，第一次開啟時會搬過來。 */
+    const USD_RATE_KEY = 'USD_DEFAULT_RATE_V1';
+    let usdDefaultRate = (() => {
+      try {
+        const v = Number(localStorage.getItem(USD_RATE_KEY));
+        if (v > 0) return v;
+        const old = JSON.parse(localStorage.getItem('USD_FX_V1') || 'null');  // 舊版 huimoney
+        const r = old && Number(old.rate);
+        if (r > 15 && r < 60) return r;
+      } catch (e) { /* 略過 */ }
+      return 29;
+    })();
+
+    function getUsdRate() { return usdDefaultRate; }
+
+    function applyUsdRate(v, opts = {}) {
+      const n = Number(v);
+      if (!(n > 0)) return false;
+      usdDefaultRate = n;
+      try { localStorage.setItem(USD_RATE_KEY, String(n)); } catch (e) { /* 略過 */ }
+      const input = document.getElementById('usdRateInput');
+      if (input && document.activeElement !== input) input.value = n;
+      const desc = document.getElementById('usdRateDesc');
+      if (desc) desc.textContent = n;
+      if (!opts.silent) {
+        if (typeof renderTable === 'function') renderTable();
+        if (typeof renderSummary === 'function') renderSummary();
+        if (typeof renderRetirementIfVisible === 'function') renderRetirementIfVisible();
+      }
+      return true;
+    }
+
+    function onUsdRateInputChange(input) {
+      if (!applyUsdRate(input.value)) {
+        alert('請輸入大於 0 的數字');
+        input.value = usdDefaultRate;
+        return;
+      }
+      if (typeof showToast === 'function') showToast('💵 美元匯率已改為 ' + usdDefaultRate, 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => applyUsdRate(usdDefaultRate, { silent: true }));

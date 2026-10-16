@@ -246,7 +246,7 @@ function buildHoldingsSheet(wb) {
 
   stocks.forEach(s => {
     const isUS = isUsStock(s);
-    const fxRate = isUS ? usdFx() : 1;
+    const fxRate = isUS ? getUsdRate() : 1;
     const totalCost = (Number(s.totalCost) || 0) * fxRate;
     const shares = Number(s.shares) || 0;
     const currentPrice = (Number(s.currentPrice) || 0) * fxRate;
@@ -298,6 +298,25 @@ function buildSalesListSheet(wb) {
   const totalRow = ws.addRow(['小計', '', '', '', '', sumCost, sumSellAmt, sumSpread, sumCost > 0 ? sumSpread / sumCost : 0, '', '', '', '']);
   xlSetRow(totalRow, { bg: XLSX_COLORS.totalBg, bold: true });
   totalRow.getCell(6).numFmt = '#,##0'; totalRow.getCell(7).numFmt = '#,##0'; totalRow.getCell(8).numFmt = '#,##0'; totalRow.getCell(9).numFmt = '0.00%';
+  xlBorderThin(ws);
+}
+
+/* 3.5 股票買進明細表（目前只匯出當備份參考；匯入 Excel 不會讀這張） */
+function buildBuysListSheet(wb) {
+  const ws = wb.addWorksheet('股票買進明細表');
+  const headRow = ws.addRow(['日期', '證券帳戶', '名稱', '股數', '成交價', '成交金額', '手續費', '成本', '類型', '備註']);
+  xlSetRow(headRow, { bg: XLSX_COLORS.headerBg, color: XLSX_COLORS.headerText, bold: true });
+  ws.columns.forEach((col, i) => { col.width = [11, 13, 14, 10, 10, 13, 10, 13, 10, 20][i] || 11; });
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  (stockBuys || []).forEach(r0 => {
+    const r = ws.addRow([r0.date || '', r0.account || '', r0.name || '', Number(r0.shares) || 0, Number(r0.price) || 0, Number(r0.amount) || 0, Number(r0.fee) || 0, Number(r0.cost) || 0, r0.type || '一般', r0.note || '']);
+    [4, 6, 7, 8].forEach(i => { r.getCell(i).numFmt = '#,##0'; });
+    r.getCell(5).numFmt = '#,##0.00';
+  });
+  const sum = k => (stockBuys || []).reduce((t, r) => t + (Number(r[k]) || 0), 0);
+  const totalRow = ws.addRow(['小計', '', '', '', '', sum('amount'), sum('fee'), sum('cost'), '', '']);
+  xlSetRow(totalRow, { bg: XLSX_COLORS.totalBg, bold: true });
+  [6, 7, 8].forEach(i => { totalRow.getCell(i).numFmt = '#,##0'; });
   xlBorderThin(ws);
 }
 
@@ -580,6 +599,7 @@ async function exportAllDataToExcel() {
     buildFinanceSheet(wb);
     buildInsuranceSheet(wb);
     buildHoldingsSheet(wb);
+    buildBuysListSheet(wb);
     buildSalesListSheet(wb);
     buildSalesHistorySheet(wb);
     buildStockLendingSheet(wb);

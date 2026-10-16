@@ -125,7 +125,7 @@ function retirementAutoData() {
     estimateAnnualDiv: 0, estimateMissing: 0, estimateStocks: 0
   };
   const list = (typeof stocks !== 'undefined' && Array.isArray(stocks)) ? stocks : [];
-  const fxOf = s => (typeof isUsStock === 'function' && isUsStock(s)) ? usdFx() : 1;
+  const fxOf = s => (typeof isUsStock === 'function' && isUsStock(s)) ? getUsdRate() : 1;
 
   list.forEach(s => {
     const fx = fxOf(s);
@@ -311,6 +311,12 @@ function retToggleHelp(e, el) {
   e.preventDefault(); e.stopPropagation();
   const t = el.nextElementSibling;
   if (t) t.classList.toggle('open');
+}
+
+/* 退休分頁正開著才重算（給更新股價、改匯率時呼叫） */
+function renderRetirementIfVisible() {
+  const rv = document.getElementById('retirementView');
+  if (rv && rv.style.display !== 'none') renderRetirement();
 }
 
 function renderRetirement() {
