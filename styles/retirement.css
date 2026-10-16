@@ -40,3 +40,12 @@
 .ret-growth-cell select { margin-bottom: 4px; }
 .ret-notcounted ul { margin: 0 0 8px 18px; padding: 0; font-size: 13px; line-height: 1.8; color: var(--text-main); }
 .ret-hint a, .ret-notcounted a { color: var(--primary); text-decoration: underline; }
+.ret-acc-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fff; }
+.ret-acc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.ret-acc-head .ret-input-name { flex: 1; min-width: 160px; font-weight: 600; }
+.ret-acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.ret-span { grid-column: 1 / -1; margin-top: 0; }
+.ret-help { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-left: 4px; border-radius: 50%; background: #ece6d9; color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; user-select: none; vertical-align: middle; }
+.ret-help:hover, .ret-help:focus { background: var(--primary); color: #fff; outline: none; }
+.ret-help-text { display: none; margin-top: 4px; padding: 8px 10px; background: #f3ecd8; border-radius: 6px; font-size: 12px; line-height: 1.7; color: var(--text-main); font-weight: normal; }
+.ret-help-text.open { display: block; }
