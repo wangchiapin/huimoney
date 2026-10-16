@@ -1,3 +1,8 @@
+    /* 股票管理模組共用主殼層 (個人財務資產狀況管理) 已初始化好的 fbAuth / fbDb，
+       不在這裡重複 initializeApp，避免 Firebase 重複初始化錯誤。 */
+    const CLOUD_COLLECTION = 'stockAssets';
+    let stockCloudSyncTimer = null;
+
     const STORAGE_KEY_STOCKS = 'STOCK_INVESTMENT_EXCEL_PRO_V32_STOCKS';
     const STORAGE_KEY_PAST = 'STOCK_INVESTMENT_EXCEL_PRO_V32_PAST';
     const STORAGE_KEY_CUSTOM_ACCOUNTS = 'STOCK_INVESTMENT_EXCEL_PRO_V32_ACCOUNTS';
@@ -195,6 +200,7 @@
         }
       }
       renderSummary();
+      scheduleCloudSync();
     }
 
 

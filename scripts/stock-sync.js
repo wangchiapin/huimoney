@@ -1,9 +1,9 @@
-/* 股票管理：整理全部資料、JSON 合併匯入、股票資料匯出/匯入
+/* 股票管理：Firebase 雲端同步、JSON 合併匯入、股票資料匯出/匯入
    從 stock.js 拆出來的檔案，功能沒有改變。
    跟其他 script 一樣靠瀏覽器共用的全域變數運作（stocks、saveToStorage、renderTable 等都在 stock.js），
    index.html 要放在 stock.js 後面載入。 */
 
-    /* ====== 整理／套用全部股票資料（匯出、匯入備份用） ====== */
+    /* ====== Firebase 雲端同步 ====== */
     function gatherAllData() {
       return {
         stocks, pastColumns, customAccounts, stockSales, stockBuys, stmtSettings, stmtImported, salesHistory, stockLending,
@@ -131,6 +131,76 @@
       renderTabs();
       renderTable();
       return { added, skipped };
+    }
+
+    function stockDocRef() {
+      if (!fbDb || !fbUser) return null;
+      return fbDb.collection(CLOUD_COLLECTION).doc(fbUser.uid);
+    }
+
+    let lastKnownStockCloudUpdatedAt = null; // 上次成功讀取/寫入雲端時的 updatedAt，用來偵測其他裝置的變更
+
+    async function loadStockFromCloud() {
+      const ref = stockDocRef();
+      if (!ref) return;
+      try {
+        const snap = await ref.get();
+        if (snap.exists) {
+          applyAllData(snap.data());
+          lastKnownStockCloudUpdatedAt = (snap.data() && snap.data().updatedAt) || null;
+        } else {
+          const data = gatherAllData();
+          await ref.set(data);
+          lastKnownStockCloudUpdatedAt = data.updatedAt;
+        }
+      } catch (e) {
+        console.warn('讀取股票雲端資料失敗', e);
+        if (typeof showToast === 'function') showToast('⚠️ 讀取雲端資料失敗，目前顯示的是本機資料', 'error');
+      }
+    }
+
+    async function pushStockToCloud() {
+      const ref = stockDocRef();
+      if (!ref) return;
+      try {
+        // 先偵測衝突：雲端 updatedAt 跟上次讀到的不同，代表其他裝置在這之後也存過檔，
+        // 直接整份覆蓋會蓋掉那邊的變更，先跟使用者確認。
+        const snap = await ref.get();
+        if (snap.exists) {
+          const cloudUpdatedAt = (snap.data() && snap.data().updatedAt) || null;
+          if (lastKnownStockCloudUpdatedAt && cloudUpdatedAt && cloudUpdatedAt !== lastKnownStockCloudUpdatedAt) {
+            const proceed = confirm(
+              '⚠️ 偵測到雲端的股票管理資料在你上次同步之後，已經被其他裝置更新過（可能是手機或另一台電腦）。\n\n' +
+              '按「確定」會用這台裝置目前的內容覆蓋雲端（另一台裝置的變更會遺失）。\n' +
+              '按「取消」不會儲存，建議重新整理頁面，拉取雲端最新版本後再繼續編輯。'
+            );
+            if (!proceed) {
+              if (typeof showToast === 'function') showToast('已暫停同步：雲端有更新的版本，尚未覆蓋', 'error');
+              return;
+            }
+          }
+        }
+        const data = gatherAllData();
+        await ref.set(data);
+        lastKnownStockCloudUpdatedAt = data.updatedAt;
+      } catch (err) {
+        console.warn('股票資料自動同步失敗', err);
+        if (typeof showToast === 'function') showToast('⚠️ 股票資料雲端同步失敗（本機已儲存）', 'error');
+      }
+    }
+
+    function scheduleCloudSync() {
+      if (!fbUser) return;
+      clearTimeout(stockCloudSyncTimer);
+      stockCloudSyncTimer = setTimeout(() => {
+        pushStockToCloud();
+      }, 2000);
+    }
+
+    if (typeof fbAuth !== 'undefined' && fbAuth) {
+      fbAuth.onAuthStateChanged((user) => {
+        if (user) loadStockFromCloud();
+      });
     }
 
     function exportStockData() {

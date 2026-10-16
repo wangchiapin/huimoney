@@ -7,20 +7,23 @@
 
    每月紀錄（跟上個月比）：
      - 每次重算都會把「這個月」的各項總數記下來（同一個月只留一筆，用最新的覆蓋），
-       存在本機 (OVERVIEW_MONTHLY_V1)。
+       存在本機 (OVERVIEW_MONTHLY_V1)，登入後同步到雲端 overviewMonthly/{uid}。
      - 進入新的月份後，上個月那筆會用 GitHub Action 存的「月底收盤價」
        (data/month-end/YYYY-MM.json) × 當時記錄的持股股數，重算成月底的股票現值，然後固定下來。
        現金和保險維持當月最後記錄的數字。
 
    跟其他檔案一樣，沿用全域變數：state / getVal（finance.js）、stocks
-   （stock.js）、insurancePolicies（insurance.js）、getUsdRate / isUsStock（shared.js）。
+   （stock.js）、insurancePolicies（insurance.js）、getUsdRate / isUsStock / fbDb / fbUser（shared.js）。
    ==================================================================== */
 
 const OV_MONTHLY_KEY = 'OVERVIEW_MONTHLY_V1';
+const OV_CLOUD_COLLECTION = 'overviewMonthly';
 
 let ovCharts = {};
 let ovLastCalc = null;
 let ovLastRenderedAt = null;
+let ovCloudLoaded = false;
+let ovCloudSaveTimer = null;
 let ovFinalizing = false;
 
 /* ---------- 小工具 ---------- */
@@ -197,6 +200,7 @@ function ovUpsertCurrentMonth(calc) {
   if (ovSameNumbers(store.months[key], rec)) return;
   store.months[key] = rec;
   ovSaveMonthlyLocal(store);
+  ovScheduleCloudSave();
 }
 
 /* 過去月份還沒固定的，用月底收盤價重算股票現值後固定 */
@@ -230,7 +234,7 @@ async function ovFinalizePastMonths() {
       rec.savedAt = new Date().toISOString();
       changed = true;
     }
-    if (changed) ovSaveMonthlyLocal(store);
+    if (changed) { ovSaveMonthlyLocal(store); ovScheduleCloudSave(); }
   } finally {
     ovFinalizing = false;
   }
@@ -245,6 +249,53 @@ function ovFindCompareRecord() {
   if (!keys.length) return null;
   const key = keys[keys.length - 1];
   return { key, rec: store.months[key], isLastMonth: key === ovPrevMonthKey(nowKey) };
+}
+
+/* ---------- 3. 雲端 ---------- */
+function ovDocRef() {
+  if (typeof fbDb === 'undefined' || !fbDb || typeof fbUser === 'undefined' || !fbUser) return null;
+  return fbDb.collection(OV_CLOUD_COLLECTION).doc(fbUser.uid);
+}
+async function ovLoadFromCloud() {
+  const ref = ovDocRef();
+  if (!ref) return;
+  try {
+    const snap = await ref.get();
+    const cloud = snap.exists ? { months: snap.data().months || {} } : { months: {} };
+    ovSaveMonthlyLocal(ovMergeMonthly(ovLoadMonthly(), cloud));
+    ovCloudLoaded = true;
+    await ovPushToCloud();
+  } catch (e) {
+    console.warn('讀取資產總覽每月紀錄失敗', e);
+  }
+}
+async function ovPushToCloud() {
+  const ref = ovDocRef();
+  if (!ref || !ovCloudLoaded) return;
+  try {
+    // 先讀雲端再合併，避免蓋掉另一台裝置記的月份
+    const snap = await ref.get();
+    const merged = ovMergeMonthly(snap.exists ? { months: snap.data().months || {} } : { months: {} }, ovLoadMonthly());
+    ovSaveMonthlyLocal(merged);
+    await ref.set({ months: merged.months, updatedAt: new Date().toISOString() });
+  } catch (e) {
+    console.warn('資產總覽每月紀錄同步失敗', e);
+    const hint = (e && e.code === 'permission-denied') ? '（Firebase 規則尚未開放 overviewMonthly）' : '';
+    if (typeof showToast === 'function') showToast('⚠️ 資產總覽每月紀錄雲端同步失敗' + hint + '，本機已儲存', 'error');
+  }
+}
+function ovScheduleCloudSave() {
+  if (typeof fbUser === 'undefined' || !fbUser || !ovCloudLoaded) return;
+  clearTimeout(ovCloudSaveTimer);
+  ovCloudSaveTimer = setTimeout(ovPushToCloud, 3000);
+}
+if (typeof fbAuth !== 'undefined' && fbAuth) {
+  fbAuth.onAuthStateChanged(async (user) => {
+    if (!user) { ovCloudLoaded = false; return; }
+    await ovLoadFromCloud();
+    // 其他分頁的雲端資料讀完後再重算一次
+    setTimeout(() => { if (ovIsVisible()) renderOverview(); }, 2500);
+  });
 }
 
 /* ---------- 4. 畫面 ---------- */
@@ -424,11 +475,19 @@ function ovDrawCharts(calc) {
   }
 }
 
-/* 「🔄 更新」：重新計算 */
+/* 「🔄 更新」：登入時先從雲端拉最新資料，再重算 */
 async function refreshOverview() {
   const btn = document.getElementById('ovRefreshBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 更新中…'; }
   try {
+    if (typeof fbUser !== 'undefined' && fbUser) {
+      const jobs = [];
+      if (typeof loadFromCloud === 'function') jobs.push(loadFromCloud());
+      if (typeof loadStockFromCloud === 'function') jobs.push(loadStockFromCloud());
+      if (typeof loadInsuranceFromCloud === 'function') jobs.push(loadInsuranceFromCloud());
+      jobs.push(ovLoadFromCloud());
+      await Promise.allSettled(jobs);
+    }
     await ovFinalizePastMonths();
     renderOverview();
     if (typeof showToast === 'function') showToast('📊 資產總覽已更新', 'success');

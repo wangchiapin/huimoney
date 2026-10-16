@@ -8,10 +8,11 @@
 
 ## 2026-10-16 換底：跟上 All-MoneyBook 最新版（af6976b）
 以 All-MoneyBook 當時最新版為底，做了這些差異：
-1. **雲端同步（Firebase）真的拿掉**：shared.js 的設定與登入、finance／insurance／stock-sync／overview 的雲端程式都刪掉；標題列改成「💾 資料僅存在本機」。
+1. **雲端同步（Firebase）架構保留、但不接上**（擁有者 2026-10-16 決定）：財務、股票、保險、資產總覽每月紀錄的雲端程式都跟 All-MoneyBook 一樣留著；shared.js 的 firebaseConfig 是空白的，index.html 的三行 Firebase 程式庫被註解掉，所以 fbAuth／fbDb／fbUser 都是 null、不會連任何雲端。標題列顯示「☁️ 未連線（資料只存在本機）」和「🔑 登入雲端同步」按鈕，按下去只跳提示「雲端同步目前還沒開放」。
+   以後要接上：填 firebaseConfig → 打開 index.html 的三行註解 → 把 shared.js 的 handleLoginClick() 裡的提示換回 All-MoneyBook 的登入流程。
 2. **密碼鎖定、子分頁隱藏**：設定選單和設定視窗拿掉；程式裡上百處檢查改用 shared.js 的「永遠不鎖」替身（isPageLocked、isFieldLocked、isTabHidden、lockPlaceholderHtml），這樣其他檔案跟 All-MoneyBook 幾乎一樣，以後同步比較容易。
 3. **媽的永豐拿掉**：stock-yf.js 刪除；它裡面的共用日期工具改放 scripts/date-utils.js，名稱改成 parseRocDateInt、autoSortByDate（All-MoneyBook 叫 yfParseDateInt、yfAutoSortByDate，以後同步時要記得改名）。股票分頁、手機分區列、Excel 匯出入、JSON 備份、資產總覽、小提醒卡片的永豐部分都拿掉。
-4. **📬 待確認拿掉**（stmt-pending.js）：它的資料來自擁有者私人的 Gmail 自動程式＋雲端，試用者用不到。**📥 匯入對帳單保留**（國泰證券、富邦證券、台北富邦銀行、國泰世華銀行）。
+4. **📬 待確認保留**（stmt-pending.js）：資料來自擁有者私人的 Gmail 自動程式＋雲端，沒登入時按鈕不會出現。以後接上雲端時注意：那支自動程式只抓擁有者的 Gmail、只放進擁有者的帳號，給其他人用需要另外規劃。**📥 匯入對帳單保留**（國泰證券、富邦證券、台北富邦銀行、國泰世華銀行）。
 5. **股價與匯率**：用 All-MoneyBook 的抓價程式（.github/scripts/fetch_prices.py、workflow prices.yml，平日 16:10），另外加上美元匯率（open.er-api.com → usdTwd、fxDate）。舊的 tools/update_prices.py 和 update-prices.yml 刪掉。data/prices.json 已先換成新格式（股價取自 All-MoneyBook 10/15 的檔案、匯率取自舊 huimoney 檔案）。
 6. **匯率**：用 All-MoneyBook 的標題列「💵 美元匯率」（getUsdRate／applyUsdRate，存 USD_DEFAULT_RATE_V1）。開網頁時有新一天的匯率就自動套用一次（USD_FX_APPLIED_DATE_V1 記錄），手動改的會留到下次新匯率；舊版 huimoney 的 USD_FX_V1 第一次開啟時會搬過來。
 7. **保留 huimoney 自己的東西**：退休試算分頁（含手機底部分頁、重新整理後回到退休頁）、「含借出股數」預設勾選、新使用者預設只有「證券帳戶」且可刪（固定保留「美股複委託」）。
@@ -27,7 +28,7 @@
 - 其他：備份提醒、匯入 JSON 前先詢問、第一次使用導覽、授權與隱私聲明、清掉未使用的 CSS（例如永豐、密碼鎖的樣式）。
 
 ## 以後再跟 All-MoneyBook 同步的做法
-1. 複製 All-MoneyBook 最新版檔案進來（不要 stock-yf.js、stmt-pending.js）。
+1. 複製 All-MoneyBook 最新版檔案進來（不要 stock-yf.js）。
 2. 照上面 1～8 點重做；可以拿這次的版本跟 All-MoneyBook 比對，差異都集中在上面這些地方。
 
 ## 退休試算背景

@@ -1,3 +1,17 @@
+    /* ====== Firebase 雲端同步設定（huimoney：目前不接上） ======
+       程式架構跟 All-MoneyBook 一樣保留（財務、股票、保險、資產總覽每月紀錄、📬 待確認），
+       但設定先留空，index.html 也沒有載入 Firebase 程式庫，所以不會連到任何雲端，按「登入」只會跳提示。
+       以後要接上：1) 在下面填好 Firebase 專案設定；2) 打開 index.html 裡被註解掉的三行 Firebase 程式庫；
+       3) 把 handleLoginClick() 裡的提示換成原本的登入流程（All-MoneyBook 的寫法）。 */
+    const firebaseConfig = {
+      apiKey: "",
+      authDomain: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+
     /* ====== 共用小工具：財務總覽 Excel 匯出/匯入用的「已封存」標記字首，
        讓封存項目也能完整匯出、之後合併匯入時自動以封存狀態還原 ====== */
     const FIN_ARCHIVE_MARK = '🗄️[已封存] ';
@@ -121,6 +135,48 @@
       }, isError ? 6000 : 3000);
     }
 
+    let fbAuth = null, fbDb = null, fbUser = null, cloudSaveTimer = null;
+
+    try {
+      // 設定是空的、或沒有載入 Firebase 程式庫，就當作「沒有雲端」，不初始化
+      if (!firebaseConfig.apiKey || typeof firebase === 'undefined') throw new Error('huimoney：雲端同步未接上');
+      firebase.initializeApp(firebaseConfig);
+      fbAuth = firebase.auth();
+      fbDb = firebase.firestore();
+    } catch (e) {
+      fbAuth = null; fbDb = null;   // 目前不接雲端，安靜略過
+    }
+
+    function handleLoginClick() {
+      if (!fbAuth) {
+        alert('☁️ 雲端同步目前還沒開放。\n\n你的資料只存在這台裝置的瀏覽器裡，請記得定期用「設定 → 匯出備份」下載備份。');
+        return;
+      }
+      const email = prompt("Email：");
+      if (!email) return;
+      const password = prompt("密碼：");
+      if (!password) return;
+      fbAuth.signInWithEmailAndPassword(email, password)
+        .catch(err => {
+          if (err.code === 'auth/user-not-found') {
+            // 修正：找不到帳號時不要默默自動註冊，先跟使用者確認，
+            // 避免 Email 打錯字時誤建立一個全新空白帳號、以為資料不見了。
+            const doRegister = confirm(
+              `找不到帳號 ${email}。\n\n按「確定」會建立一個全新帳號（資料會是空白的）。\n按「取消」不會建立，請確認 Email 有沒有打錯字。`
+            );
+            if (doRegister) return fbAuth.createUserWithEmailAndPassword(email, password);
+            return;
+          }
+          throw err;
+        })
+        .catch(err => { if (err) alert("登入失敗：" + err.message); });
+    }
+
+    function firebaseSignOut() {
+      if (fbAuth) fbAuth.signOut();
+    }
+
+
     /* ====== huimoney：密碼鎖定、子分頁隱藏都已拿掉 ======
        All-MoneyBook 的程式很多地方會問「這頁有沒有鎖、這個分頁有沒有藏起來」，
        這裡一律回答「沒有」，其他檔案就能跟 All-MoneyBook 保持一樣，之後同步比較容易。 */
@@ -187,7 +243,7 @@
     /* ====== 全站美元匯率預設值 ======
        股票管理、股票分析圖、小提醒卡片、Excel 匯出/匯入換算美股台幣時，都用這個值
        （以前寫死 29）。財務總覽每個日期欄位仍然用各自的「美金匯率」那一列，不受影響。
-       存在本機 (USD_DEFAULT_RATE_V1)。每天自動抓到的匯率（data/prices.json）有更新時會自動套用（stock-price.js），
+       存在本機 (USD_DEFAULT_RATE_V1)，登入後跟著股票管理資料一起同步到雲端 (stockAssets.usdRate)。每天自動抓到的匯率（data/prices.json）有更新時會自動套用（stock-price.js），
        也可以在標題列自己改；自己改的數字會用到下一次抓到新匯率為止。
        舊版 huimoney 存在 USD_FX_V1 的匯率，第一次開啟時會搬過來。 */
     const USD_RATE_KEY = 'USD_DEFAULT_RATE_V1';
@@ -227,6 +283,7 @@
         input.value = usdDefaultRate;
         return;
       }
+      if (typeof scheduleCloudSync === 'function') scheduleCloudSync();
       if (typeof showToast === 'function') showToast('💵 美元匯率已改為 ' + usdDefaultRate, 'success');
     }
 

@@ -16,6 +16,11 @@
   <link rel="stylesheet" href="styles/retirement.css">
   <link rel="stylesheet" href="styles/mobile.css">
 
+  <!-- Firebase (compat SDK)：huimoney 目前不接雲端，所以先不載入；要接上時把下面三行的註解拿掉，並在 scripts/shared.js 填好 firebaseConfig
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <!-- ExcelJS：僅供「匯出全部資料 (Excel)」功能使用，支援儲存格顏色/格式 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -25,7 +30,7 @@
 
   <div class="app-header">
     <div class="app-header-title">📋 個人財務資產狀況管理</div>
-    <button type="button" class="mb-header-more" id="mbHeaderMore" onclick="mbToggleHeaderMenu(event)" aria-label="匯率與匯入">⋯</button>
+    <button type="button" class="mb-header-more" id="mbHeaderMore" onclick="mbToggleHeaderMenu(event)" aria-label="匯率與登入">⋯</button>
     <div class="app-tabs">
       <button class="app-tab-btn active" id="tabBtnFinance" onclick="switchAppView('finance')"><span class="tab-ic">📋</span> <span class="tab-lb">財務總覽</span></button>
       <button class="app-tab-btn" id="tabBtnStock" onclick="switchAppView('stock')"><span class="tab-ic">📈</span> <span class="tab-lb">股票管理</span></button>
@@ -38,7 +43,10 @@
         <input type="number" id="usdRateInput" step="0.01" min="0" inputmode="decimal" onchange="onUsdRateInputChange(this)">
       </label>
       <button class="btn btn-outline stmt-open-btn" id="stmtImportBtn" onclick="openStmtImport()">📥 匯入對帳單</button>
-      <span id="syncStatus" title="資料只存在這個瀏覽器裡，清除瀏覽資料或換裝置就看不到，請用「設定 → 匯出備份」定期備份">💾 資料僅存在本機，請定期匯出備份</span>
+      <button class="btn stmt-pending-btn" id="stmtPendingBtn" onclick="openStmtPending()" style="display:none;">📬 待確認</button>
+      <span id="syncStatus" title="雲端同步目前還沒開放：資料只存在這個瀏覽器裡，清除瀏覽資料或換裝置就看不到，請用「設定 → 匯出備份」定期備份">☁️ 未連線（資料只存在本機）</span>
+      <button class="btn btn-outline" id="loginBtn" onclick="handleLoginClick()">🔑 登入雲端同步</button>
+      <button class="btn btn-outline" id="logoutBtn" style="display:none;" onclick="firebaseSignOut()">登出</button>
     </div>
   </div>
 
@@ -911,6 +919,7 @@
   <script src="scripts/stock-buys.js"></script>
   <script src="scripts/stmt-parsers.js"></script>
   <script src="scripts/stmt-import.js"></script>
+  <script src="scripts/stmt-pending.js"></script>
   <script src="scripts/stock.js"></script>
   <script src="scripts/stock-sync.js"></script>
   <script src="scripts/stock-calculator.js"></script>

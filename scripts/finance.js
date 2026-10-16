@@ -133,6 +133,114 @@
     }
     initChartDrag();
 
+    // ========================================================================
+    // Firebase 雲端同步（骨架 — 請自行填入 firebaseConfig 並依需求調整）
+    // ------------------------------------------------------------------------
+    // 1. 到 Firebase Console 複製你的 firebaseConfig 貼到下面。
+    //    如果要跟你其他工具(華語課表、moneybook)共用同一個 Firebase 專案
+    //    (moneybook-50481)，直接複用該專案的設定即可。
+    // 2. 架構比照你既有工具：email/password 登入 + 每個使用者一份 Firestore 文件。
+    // 3. 存檔採「整份文件覆蓋」(set，不加 merge:true)，避免你之前遇過的
+    //    「merge:true 深層合併導致刪除的欄位又跑回來」那個bug。
+    // 4. 這裡先幫你把骨架接好、UI也接好了，實際的 collection/doc 命名、
+    //    要不要開放註冊、要不要多裝置即時同步(onSnapshot)等，你可以再自行調整。
+    // ========================================================================
+    // Firestore 文件路徑：collection('financeAssets') 底下每個使用者一份完整文件
+    function fbDocRef() {
+      if (!fbDb || !fbUser) return null;
+      return fbDb.collection('financeAssets').doc(fbUser.uid);
+    }
+
+    if (fbAuth) {
+      fbAuth.onAuthStateChanged(async (user) => {
+        fbUser = user;
+        const statusEl = document.getElementById('syncStatus');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (user) {
+          loginBtn.style.display = 'none';
+          logoutBtn.style.display = '';
+          statusEl.textContent = '☁️ 已連線：' + user.email;
+          await loadFromCloud();
+        } else {
+          loginBtn.style.display = '';
+          logoutBtn.style.display = 'none';
+          statusEl.textContent = '☁️ 未連線（僅本機儲存）';
+        }
+      });
+    }
+
+    let lastKnownCloudUpdatedAt = null; // 上次成功讀取/寫入雲端時，雲端文件的 updatedAt，用來偵測其他裝置的變更
+
+    async function loadFromCloud() {
+      const ref = fbDocRef();
+      if (!ref) return;
+      try {
+        const snap = await ref.get();
+        if (snap.exists) {
+          state = snap.data().state || state;
+          lastKnownCloudUpdatedAt = snap.data().updatedAt || null;
+          migrateLegacyData();
+          localStorage.setItem('finance_data_v6', JSON.stringify(state));
+          render();
+          saveToCloud(); // 把搬遷/補欄位後的結果同步回雲端，避免下次登入又讀到舊格式
+        } else {
+          // 雲端還沒有資料：把目前(本機)的狀態第一次推上去
+          const nowIso = new Date().toISOString();
+          await ref.set({ state, updatedAt: nowIso });
+          lastKnownCloudUpdatedAt = nowIso;
+        }
+        document.getElementById('syncStatus').textContent = '☁️ 已同步';
+      } catch (e) {
+        console.error("讀取雲端資料失敗：", e);
+        const el = document.getElementById('syncStatus');
+        if (el) {
+          el.textContent = '☁️ 同步失敗（點我看原因）';
+          el.style.cursor = 'pointer';
+          el.title = (e.code || '') + ' ' + (e.message || '');
+          el.onclick = () => alert('雲端同步失敗：\n\n' + (e.code || '') + '\n' + (e.message || e));
+        }
+      }
+    }
+
+    async function saveToCloud() {
+      const ref = fbDocRef();
+      if (!ref) return;
+      const el = document.getElementById('syncStatus');
+      try {
+        // 先偵測衝突：如果雲端文件的 updatedAt 跟我們上次讀到的不一樣，
+        // 代表在這之後有其他裝置（例如手機）也存過檔，直接整份覆蓋會蓋掉那邊的變更。
+        const snap = await ref.get();
+        if (snap.exists) {
+          const cloudUpdatedAt = snap.data().updatedAt || null;
+          if (lastKnownCloudUpdatedAt && cloudUpdatedAt && cloudUpdatedAt !== lastKnownCloudUpdatedAt) {
+            const proceed = confirm(
+              '⚠️ 偵測到雲端資料在你上次同步之後，已經被其他裝置更新過（可能是手機或另一台電腦）。\n\n' +
+              '按「確定」會用這台裝置目前的內容覆蓋雲端（另一台裝置的變更會遺失）。\n' +
+              '按「取消」不會儲存，建議重新整理頁面，拉取雲端最新版本後再繼續編輯。'
+            );
+            if (!proceed) {
+              if (el) { el.textContent = '☁️ 已暫停同步（雲端有更新的版本）'; el.style.cursor = ''; el.title = ''; el.onclick = null; }
+              return;
+            }
+          }
+        }
+        const nowIso = new Date().toISOString();
+        // 整份覆蓋（不用 merge:true），避免刪除的項目又被合併回來
+        await ref.set({ state, updatedAt: nowIso });
+        lastKnownCloudUpdatedAt = nowIso;
+        if (el) { el.textContent = '☁️ 已同步'; el.style.cursor = ''; el.title = ''; el.onclick = null; }
+      } catch (e) {
+        console.error("寫入雲端失敗：", e);
+        if (el) {
+          el.textContent = '☁️ 同步失敗（點我看原因）';
+          el.style.cursor = 'pointer';
+          el.title = (e.code || '') + ' ' + (e.message || '');
+          el.onclick = () => alert('雲端同步失敗：\n\n' + (e.code || '') + '\n' + (e.message || e));
+        }
+      }
+    }
+
     function saveState() {
       try {
         localStorage.setItem('finance_data_v6', JSON.stringify(state));
@@ -144,6 +252,11 @@
         } else {
           alert('⚠️ 儲存失敗，這次的變更可能沒有存進去：\n' + (e && e.message ? e.message : e));
         }
+      }
+      // 雲端同步：debounce 800ms，避免每個按鍵/儲存格編輯都寫一次 Firestore
+      if (fbUser) {
+        clearTimeout(cloudSaveTimer);
+        cloudSaveTimer = setTimeout(saveToCloud, 800);
       }
     }
 
