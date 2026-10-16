@@ -638,6 +638,17 @@
       </div>
       <div class="ret-chart-box" id="retChartBox"><canvas id="retChart"></canvas></div>
       <div class="ret-info" id="retInfo"></div>
+      <div class="ret-group ret-notcounted">
+        <h3>⚠️ 這份試算沒有算進去的東西</h3>
+        <ul>
+          <li>所得稅、股利的二代健保補充保費、交易手續費與證交稅。</li>
+          <li>未來調薪（除非你自己在專戶欄位設定增加方式）、法規修改、退休年齡或給付規定的變動。</li>
+          <li>年資中斷、留職停薪、轉換工作或制度，以及各種扣款與減額。</li>
+          <li>報酬率、殖利率、通膨都是你填的假設，實際會上下波動。「約等於今天多少錢」只是用通膨率簡單換算。</li>
+          <li>公務人員、教師等退休金的法定金額請用官方或人事室核定的數字，例如公立學校教師可參考<a href="https://pension-calculation.netlify.app/" target="_blank" rel="noopener noreferrer">教師退休金試算網站</a>。</li>
+        </ul>
+        <div class="ret-hint">以上僅供概略規劃，不是投資或退休金審定的依據。</div>
+      </div>
       <div class="ret-group"><h3>📊 逐年資產變化明細 <small>（半退休、完整退休那一年會標亮，修改上面的設定會即時更新）</small></h3><div id="retDetail"></div></div>
       <div style="text-align:right;margin-top:12px;"><button class="btn btn-outline" onclick="retResetDefaults()">↩️ 還原成範例數字</button></div>
     </div>

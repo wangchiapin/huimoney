@@ -38,3 +38,5 @@
 .ret-detail tr.ret-hl td { background: #f3ecd8; font-weight: 600; }
 .ret-growth-cell { min-width: 170px; }
 .ret-growth-cell select { margin-bottom: 4px; }
+.ret-notcounted ul { margin: 0 0 8px 18px; padding: 0; font-size: 13px; line-height: 1.8; color: var(--text-main); }
+.ret-hint a, .ret-notcounted a { color: var(--primary); text-decoration: underline; }

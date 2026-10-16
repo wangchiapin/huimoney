@@ -18,6 +18,7 @@ function retirementDefaults() {
     halfAge: 50,             // 半退休年齡
     fullAge: 60,             // 完整退休年齡（開始領退休專戶）
     crashDrop: 25,           // 股災情境：股票市值下跌 %
+    inflation: 2,            // 預估通膨率 %（只用來換算「相當於今天多少錢」，不影響上面的數字）
     stockMode: 'manual',     // 'auto' 自動帶入持股現值 | 'manual' 手動輸入
     stockManual: 100,        // 萬元
     midYear: true,           // 每年投入的錢是否當成「分散在全年」（只算半年報酬），取消勾選＝年底一次投入
@@ -28,8 +29,8 @@ function retirementDefaults() {
     yieldMode: 'manual',     // 'manual' | 'actual' 過去一年實際領到 | 'estimate' 年度預估股利
     yieldManual: 5.5,        // %
     accounts: [
-      { id: 'acc_demo_1', name: '退休專戶 A（範例）', balance: 50, yearlyAdd: 10, rate: 5, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 },
-      { id: 'acc_demo_2', name: '退休專戶 B（範例）', balance: 30, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 }
+      { id: 'acc_demo_1', name: '退休專戶 A（範例）', balance: 50, yearlyAdd: 10, rate: 5, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0, payYears: 0, payRate: 1 },
+      { id: 'acc_demo_2', name: '退休專戶 B（範例）', balance: 30, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0, payYears: 0, payRate: 1 }
     ]
   };
 }
@@ -44,6 +45,7 @@ function retirementSanitize(raw) {
   out.halfAge = num(raw.halfAge, d.halfAge);
   out.fullAge = num(raw.fullAge, d.fullAge);
   out.crashDrop = Math.min(95, Math.max(0, num(raw.crashDrop, d.crashDrop)));
+  out.inflation = Math.min(30, Math.max(0, num(raw.inflation, d.inflation)));
   out.stockMode = raw.stockMode === 'auto' ? 'auto' : 'manual';
   out.stockManual = num(raw.stockManual, d.stockManual);
   out.midYear = raw.midYear === undefined ? d.midYear : !!raw.midYear;
@@ -64,7 +66,9 @@ function retirementSanitize(raw) {
       growth: num(a && a.growth, 0),
       capAdd: Math.max(0, num(a && a.capAdd, 0)),
       stopAge: Math.max(0, num(a && a.stopAge, 0)),
-      pension: Math.max(0, num(a && a.pension, 0))
+      pension: Math.max(0, num(a && a.pension, 0)),
+      payYears: Math.max(0, num(a && a.payYears, 0)),
+      payRate: Math.max(0, num(a && a.payRate, 1))
     }));
   }
   return out;
@@ -218,10 +222,22 @@ function retirementCompute(st, auto) {
     rows.push({ n, age: st.curAge + n, stock: sv, acc: accNow.slice(), accSum, total: sv + accSum });
   }
   const y = yieldPct / 100;
-  const accAtFull = st.accounts.map((a, i) => ({ name: a.name || '（未命名）', value: accSeries[i][Math.min(nFull, years)] }));
+  // 退休後分幾年領：每月可領＝把退休那天的餘額，在「領取期間報酬率」下，平均分成 N 年的每月給付
+  const monthlyPay = (value, a) => {
+    if (!(a.payYears > 0)) return 0;
+    const N = Math.round(a.payYears * 12), m = a.payRate / 100 / 12;
+    return m > 0 ? value * m / (1 - Math.pow(1 + m, -N)) : value / N;
+  };
+  const accAtFull = st.accounts.map((a, i) => {
+    const value = accSeries[i][Math.min(nFull, years)];
+    return { name: a.name || '（未命名）', value, monthly: monthlyPay(value, a) };
+  });
+  const inflFull = Math.pow(1 + st.inflation / 100, nFull), inflHalf = Math.pow(1 + st.inflation / 100, nHalf);
   return {
     stockPV, dca, yieldPct, yieldNote, nHalf, nFull, years, stock, crash, total, rows,
     pensionMonthly: st.accounts.reduce((sum, a) => sum + (a.pension || 0), 0),
+    payoutMonthly: accAtFull.reduce((sum, a) => sum + a.monthly, 0),
+    realHalfStock: stock[nHalf] / inflHalf, realFullTotal: total[nFull] / inflFull,
     half: { stock: stock[nHalf], monthlyDiv: stock[nHalf] * y / 12, crash: crash[nHalf], crashMonthlyDiv: crash[nHalf] * y / 12 },
     full: {
       stock: stock[nFull], monthlyDiv: stock[nFull] * y / 12,
@@ -279,6 +295,8 @@ function renderRetirementSettings() {
       <td><input type="number" step="any" class="ret-input" value="${esc(a.capAdd)}" oninput="retSetAccount(${i}, 'capAdd', this.value)"></td>
       <td><input type="number" step="1" class="ret-input" value="${esc(a.stopAge)}" oninput="retSetAccount(${i}, 'stopAge', this.value)"></td>
       <td><input type="number" step="any" class="ret-input" value="${esc(a.pension)}" oninput="retSetAccount(${i}, 'pension', this.value)"></td>
+      <td><input type="number" step="1" class="ret-input" value="${esc(a.payYears)}" oninput="retSetAccount(${i}, 'payYears', this.value)"></td>
+      <td><input type="number" step="0.1" class="ret-input" value="${esc(a.payRate)}" oninput="retSetAccount(${i}, 'payRate', this.value)"></td>
       <td><button class="btn-del" title="刪除這個專戶" onclick="retRemoveAccount(${i})">✕</button></td>
     </tr>`).join('');
 
@@ -289,6 +307,7 @@ function renderRetirementSettings() {
         <label class="ret-field"><span>目前年齡</span><input type="number" step="1" class="ret-input" value="${esc(st.curAge)}" oninput="retSetNum('curAge', this.value)"></label>
         <label class="ret-field"><span>半退休年齡</span><input type="number" step="1" class="ret-input" value="${esc(st.halfAge)}" oninput="retSetNum('halfAge', this.value)"></label>
         <label class="ret-field"><span>完整退休年齡（開始領退休專戶）</span><input type="number" step="1" class="ret-input" value="${esc(st.fullAge)}" oninput="retSetNum('fullAge', this.value)"></label>
+        <label class="ret-field"><span>預估通膨率 (%)<br><small>只用來換算「相當於今天多少錢」</small></span><input type="number" step="0.1" min="0" max="30" class="ret-input" value="${esc(st.inflation)}" oninput="retSetNum('inflation', this.value)"></label>
         <label class="ret-field"><span>股災情境：股票市值下跌 (%)</span><input type="number" step="1" min="0" max="95" class="ret-input" value="${esc(st.crashDrop)}" oninput="retSetNum('crashDrop', this.value)"></label>
       </div>
 
@@ -333,11 +352,12 @@ function renderRetirementSettings() {
       <h3>🏦 退休專戶 <small>（退撫基金、勞退、年金保險或其他長期存放的帳戶，可自行新增）</small></h3>
       <div class="ret-table-wrap">
         <table class="ret-table">
-          <thead><tr><th>名稱</th><th>目前餘額（萬）</th><th>每年新增（萬）</th><th>年化報酬（%）</th><th>每年新增金額的增加方式</th><th>每年新增金額上限（萬，0＝不限）</th><th>新增到幾歲為止（0＝不限）</th><th>退休後每月另領（萬）</th><th></th></tr></thead>
-          <tbody>${accRows || '<tr><td colspan="9" class="ret-empty">還沒有專戶，按下面的按鈕新增</td></tr>'}</tbody>
+          <thead><tr><th>名稱</th><th>目前餘額（萬）</th><th>每年新增（萬）</th><th>年化報酬（%）</th><th>每年新增金額的增加方式</th><th>每年新增金額上限（萬，0＝不限）</th><th>新增到幾歲為止（0＝不限）</th><th>退休後每月另領（萬）</th><th>餘額分幾年領（0＝不計算）</th><th>領取期間年化報酬（%）</th><th></th></tr></thead>
+          <tbody>${accRows || '<tr><td colspan="11" class="ret-empty">還沒有專戶，按下面的按鈕新增</td></tr>'}</tbody>
         </table>
       </div>
-      <div class="ret-hint">「新增到幾歲為止」填 0 代表一直新增；例如填 59，就是 59 歲之後不再投入。「每年新增金額的增加方式」可用來表示薪水調升帶來的提撥增加：選「成長 %」是每年多存上一年的幾 %；選「每年固定增加」是每年多存同樣的金額（萬）；若有「上限」，增加到上限就不再增加。「退休後每月另領」只用來顯示在摘要，不會算進資產。</div>
+      <div class="ret-hint">「新增到幾歲為止」填 0 代表一直新增；例如填 59，就是 59 歲之後不再投入。「每年新增金額的增加方式」可用來表示薪水調升帶來的提撥增加：選「成長 %」是每年多存上一年的幾 %；選「每年固定增加」是每年多存同樣的金額（萬）；若有「上限」，增加到上限就不再增加。「退休後每月另領」是固定的給付（例如年金），只顯示在摘要、不算進資產。「餘額分幾年領」填年數後，會算出退休那天的餘額平均分成每月可領多少。</div>
+      <div class="ret-hint">💡 公立學校教師若是 112 年 7 月以後初任的「個人專戶制」，依<a href="https://pension-calculation.netlify.app/" target="_blank" rel="noopener noreferrer">教師退休金試算網站</a>的說明，每月提撥是薪額的 15%（政府 9.75%＋本人 5.25%），本人還可以自願多提繳（上限 5.25%）；「每年新增」可以把這些都算進去。實際制度與金額請以服務單位人事室為準。</div>
       <button class="btn btn-outline" onclick="retAddAccount()">➕ 新增專戶</button>
     </div>
   `;
@@ -368,7 +388,7 @@ function retSetAccountMode(i, mode) {
   retTouch(); updateRetirementResults();
 }
 function retAddAccount() {
-  retirementSettings.accounts.push({ id: 'acc_' + Date.now(), name: '', balance: 0, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0 });
+  retirementSettings.accounts.push({ id: 'acc_' + Date.now(), name: '', balance: 0, yearlyAdd: 0, rate: 4, growthMode: 'pct', growth: 0, capAdd: 0, stopAge: 0, pension: 0, payYears: 0, payRate: 1 });
   retTouch(); renderRetirement();
 }
 function retRemoveAccount(i) {
@@ -408,17 +428,18 @@ function updateRetirementResults() {
   const set = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   set('retTitleHalf', `${st.halfAge} 歲預估股票市值（${c.nHalf} 年後）`);
   set('retValHalf', retWan(c.half.stock));
-  set('retSubHalf', `月被動股息約 ${retFmt(c.half.monthlyDiv, 1)} 萬元`);
+  set('retSubHalf', `月被動股息約 ${retFmt(c.half.monthlyDiv, 1)} 萬元；約等於今天的 ${retFmt(c.realHalfStock, 0)} 萬`);
   set('retTitleCrash', `${st.halfAge} 歲股災防禦線（跌 ${retFmt(st.crashDrop, 0)}%）`);
   set('retValCrash', retWan(c.half.crash));
   set('retSubCrash', `防禦月股息約 ${retFmt(c.half.crashMonthlyDiv, 1)} 萬元`);
   set('retTitleAcc', `${st.fullAge} 歲退休專戶總額`);
   set('retValAcc', retWan(c.full.accTotal));
   set('retSubAcc', (c.full.accounts.length ? c.full.accounts.map(a => `${a.name} ${retFmt(a.value, 0)}萬`).join(' ＋ ') : '尚未設定專戶')
+    + (c.payoutMonthly > 0 ? `；餘額平均分年領，每月約 ${retFmt(c.payoutMonthly, 2)} 萬` : '')
     + (c.pensionMonthly > 0 ? `；另每月可領 ${retFmt(c.pensionMonthly, 2)} 萬` : ''));
   set('retTitleTotal', `${st.fullAge} 歲全體總身價（${c.nFull} 年後）`);
   set('retValTotal', retWan(c.full.total));
-  set('retSubTotal', `其中股票約 ${retFmt(c.full.stock, 0)} 萬，股息月領約 ${retFmt(c.full.monthlyDiv, 1)} 萬`);
+  set('retSubTotal', `其中股票約 ${retFmt(c.full.stock, 0)} 萬，股息月領約 ${retFmt(c.full.monthlyDiv, 1)} 萬；約等於今天的 ${retFmt(c.realFullTotal, 0)} 萬`);
 
   // 說明
   const info = $('retInfo');
