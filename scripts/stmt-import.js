@@ -6,6 +6,7 @@
    - 寫入：股票買進、股票賣出（先買先賣）、當沖、配股、現金股利、借卷收入、出借張數、
            庫存核對、財務總覽銀行餘額；寫完可「復原這次匯入」
    需要 stock.js、stock-buys.js、stock-sales.js、stock-lending.js、finance.js、stmt-parsers.js
+   ※ stmt-parsers.js 跟 All-MoneyBook 共用，index.html 直接載入 All-MoneyBook 網站上的那一份（這個倉庫不另外放）
    ==================================================================== */
 
     const STMT_PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
