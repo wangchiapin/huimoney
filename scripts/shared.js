@@ -4,12 +4,13 @@
        以後要接上：1) 在下面填好 Firebase 專案設定；2) 打開 index.html 裡被註解掉的三行 Firebase 程式庫；
        3) 把 handleLoginClick() 裡的提示換成原本的登入流程（All-MoneyBook 的寫法）。 */
     const firebaseConfig = {
-      apiKey: "",
-      authDomain: "",
-      projectId: "",
-      storageBucket: "",
-      messagingSenderId: "",
-      appId: ""
+  apiKey: "AIzaSyCmMjLxJOtG1Dh368UIEcKu9XVbawMeOj4",
+  authDomain: "huy-money.firebaseapp.com",
+  projectId: "huy-money",
+  storageBucket: "huy-money.firebasestorage.app",
+  messagingSenderId: "1081645927764",
+  appId: "1:1081645927764:web:09f963b8bdcca060cb8cc1",
+  measurementId: "G-ZN5FPVLEWE"
     };
 
     /* ====== 共用小工具：財務總覽 Excel 匯出/匯入用的「已封存」標記字首，
