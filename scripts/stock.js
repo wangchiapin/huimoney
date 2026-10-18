@@ -272,6 +272,7 @@
           return `
             <div class="tab-pill-group ${currentFilter === t.id ? 'active' : ''}">
               <button class="tab-pill-btn" onclick="setFilter('${safeId}')">${esc(t.label)}${countText}</button>
+              <button class="tab-pill-del tab-pill-edit" title="改名" onclick="renameCustomAccount(event, '${safeId}')">✏️</button>
               <button class="tab-pill-del" title="刪除此證券帳戶" onclick="deleteCustomAccount(event, '${safeId}')">✕</button>
             </div>
           `;

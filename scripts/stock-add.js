@@ -34,6 +34,47 @@
       alert(`已成功新增證券帳戶【${name}】！`);
     }
 
+    // 證券帳戶改名：把用到舊名字的地方一起換掉（帳戶清單、持股、買進、賣出的扣股紀錄、歷史快照、對帳單匯入設定、目前分頁）
+    function renameStockAccount(oldName, newName) {
+      const n = { stocks: 0, buys: 0, sales: 0, snapshots: 0, stmt: 0 };
+      customAccounts = customAccounts.map(a => (a === oldName ? newName : a));
+      stocks.forEach(s => { if (s.account === oldName) { s.account = newName; n.stocks++; } });
+      (stockBuys || []).forEach(b => { if (b.account === oldName) { b.account = newName; n.buys++; } });
+      (stockSales || []).forEach(r => { if (r.fifo && r.fifo.account === oldName) { r.fifo.account = newName; n.sales++; } });
+      try {
+        const snaps = JSON.parse(localStorage.getItem('ASSET_SNAPSHOTS_V1') || '[]');
+        let changed = false;
+        (Array.isArray(snaps) ? snaps : []).forEach(sp => (sp.items || []).forEach(it => {
+          if (it.account === oldName) { it.account = newName; n.snapshots++; changed = true; }
+        }));
+        if (changed) localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(snaps));
+      } catch (e) { console.warn('歷史快照改名失敗', e); }
+      const map = (stmtSettings && stmtSettings.accountMap) || {};
+      Object.keys(map).forEach(k => { if (map[k] && map[k].stockAccount === oldName) { map[k].stockAccount = newName; n.stmt++; } });
+      if (currentFilter === oldName) currentFilter = newName;
+      return n;
+    }
+
+    function renameCustomAccount(event, oldName) {
+      event.stopPropagation();
+      if (oldName === '美股複委託') { alert('「美股複委託」這個名字程式用來判斷美股，不能改名。'); return; }
+      const input = prompt(`把證券帳戶【${oldName}】改名成：`, oldName);
+      if (input === null) return;
+      const name = input.trim();
+      if (!name || name === oldName) return;
+      if (name === '美股複委託' || name.includes('+')) { alert('這個名字不能用（不能是「美股複委託」，也不能有「+」）。'); return; }
+      if (getAllAccounts().includes(name)) {
+        alert(`已經有名叫【${name}】的證券帳戶。為了避免兩個帳戶的資料混在一起，不會自動合併，請換一個名字。`);
+        return;
+      }
+      recordSnapshot();   // 改錯了可以按 Ctrl+Z 復原
+      const n = renameStockAccount(oldName, name);
+      saveToStorage();
+      renderTabs();
+      renderTable();
+      if (typeof showToast === 'function') showToast(`已把【${oldName}】改名成【${name}】（持股 ${n.stocks} 筆、買進 ${n.buys} 筆）`, 'success');
+    }
+
     function deleteCustomAccount(event, accName) {
       event.stopPropagation();
       const hasStocks = stocks.some(s => s.account === accName);
