@@ -411,9 +411,9 @@
           // 出借合約 → 借卷收入
           const lentByName = {};
           (res.lendings || []).forEach(l => {
-            const name = stmtAppName(l.name, '', account);
+            const name = stmtAppName(l.name, l.code || '', account);
             const ld = stmtLendDates(res, l);
-            lentByName[name] = (lentByName[name] || 0) + (ld.ret ? 0 : l.shares); // 這個月已還券的不算
+            if (!l.noLentSync) lentByName[name] = (lentByName[name] || 0) + (ld.ret ? 0 : l.shares); // 這個月已還券的不算
             const data = {
               name, lendDate: stmtRoc(l.lendDate), lentShares: l.shares, feeRate: l.rate, returnDate: stmtRoc(ld.ret),
               income: l.fee, serviceFee: stmtR((l.serviceFee || 0) + (l.tax || 0)), paymentDate: stmtRoc(ld.pay),
@@ -427,6 +427,7 @@
             const dup = !!same;
             stmtItems.push(stmtItem(Object.assign({}, base, {
               type: 'lendIncome', date: l.lendDate, data, dup,
+              note: l.payUnknown ? '對帳單沒寫還券日期，入款日先用「月底後第一個工作日」，請按 ✏️ 改成還券日後第一個工作日' : '',
               dupWith: same ? `出借 ${same.lendDate} ${same.name} ${stmtFmt(same.lentShares)}　收入 $${stmtFmt(same.income)}　入款 ${same.paymentDate || '（空白）'}` : '',
               edit: [['name', '出借股票', 'text'], ['lendDate', '出借日期', 'text'], ['returnDate', '還卷日期', 'text'], ['paymentDate', '入款日期', 'text'], ['income', '收入'], ['serviceFee', '服務費']]
             })));
