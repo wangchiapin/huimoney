@@ -181,8 +181,8 @@ function savingCardHtml(c, i) {
   let yieldInput = '';
   if (c.yieldMode === 'pct') yieldInput = f('yieldPct', '殖利率（%）', c.yieldPct);
   else if (c.yieldMode === 'div') yieldInput = f('divPerShare', '每股每年配息（元）', c.divPerShare);
-  else yieldInput = `<div class="form-group"><label class="form-label">每股每年配息（自動帶入）</label><div class="form-control" id="savingAutoDiv${i}" style="background:#f6f2ea;"></div></div>`;
-  return `<div class="saving-card" style="border:1px solid #e0d8c8; border-radius:10px; padding:12px; margin-bottom:12px;">
+  else yieldInput = `<div class="form-group"><label class="form-label">每股每年配息（自動帶入）</label><div class="form-control" id="savingAutoDiv${i}" style="background:#f8ecda;"></div></div>`;
+  return `<div class="saving-card" style="border:1px solid #ecd8bc; border-radius:16px; padding:12px; margin-bottom:12px;">
     <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
       <strong>第 ${i + 1} 檔</strong>
       <select class="form-control" style="max-width:150px;" onchange="savingSetMode(${i}, this.value)">
@@ -205,9 +205,9 @@ function savingCardHtml(c, i) {
           ${yopt('pct', '手動填殖利率 %')}${yopt('div', '手動填每股配息')}${yopt('actual', '過去一年實際領到')}${yopt('estimate', '股利頁的預估股利')}
         </select></div>
       ${yieldInput}
-      <div class="form-group"><label class="form-label">換算殖利率</label><div class="form-control" id="savingYield${i}" style="background:#f6f2ea;"></div></div>
+      <div class="form-group"><label class="form-label">換算殖利率</label><div class="form-control" id="savingYield${i}" style="background:#f8ecda;"></div></div>
     </div>
-    <div id="savingNote${i}" style="font-size:0.8rem; color:#b6533c; margin-top:4px;"></div>
+    <div id="savingNote${i}" style="font-size:0.8rem; color:#b5424d; margin-top:4px;"></div>
   </div>`;
 }
 
@@ -235,7 +235,7 @@ function savingRecalc() {
   const { per, total } = savingTotals(g.cards, g);
   const last = total[total.length - 1] || { value: 0, invested: 0, divYear: 0, cumDiv: 0 };
   const sum = document.getElementById('savingSummary');
-  const card = (t, v, s) => `<div style="flex:1; min-width:130px; background:#f6f2ea; border-radius:10px; padding:10px 12px;"><div style="font-size:0.78rem; color:#93897a;">${t}</div><div style="font-size:1.15rem; font-weight:700;">${v}</div><div style="font-size:0.75rem; color:#93897a;">${s || ''}</div></div>`;
+  const card = (t, v, s) => `<div style="flex:1; min-width:130px; background:#f8ecda; border-radius:16px; padding:10px 12px;"><div style="font-size:0.78rem; color:#98806a;">${t}</div><div style="font-size:1.15rem; font-weight:700;">${v}</div><div style="font-size:0.75rem; color:#98806a;">${s || ''}</div></div>`;
   sum.innerHTML = card(`${g.years} 年後總市值`, 'NT$ ' + savingFmt(last.value), `投入本金 ${savingFmt(last.invested)}`)
     + card('第 ' + g.years + ' 年領的股息', 'NT$ ' + savingFmt(last.divYear), '每月約 ' + savingFmt(last.divYear / 12))
     + card('累積領到股息', 'NT$ ' + savingFmt(last.cumDiv), g.reinvest ? '已再投入買股' : '沒有再投入');
@@ -249,7 +249,7 @@ function savingRecalc() {
   else rows = per[g.view];
   const showSh = !(g.view === 'total' || !per[g.view]);
   document.getElementById('savingTable').innerHTML = `<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-    <thead><tr style="text-align:right; border-bottom:2px solid #e0d8c8;"><th style="text-align:left;">第幾年</th>${showSh ? '<th>年底股數</th><th>年底股價</th>' : ''}<th>市值</th><th>投入本金</th><th>當年股息</th><th>每月約</th><th>累積股息</th></tr></thead><tbody>`
+    <thead><tr style="text-align:right; border-bottom:2px solid #ecd8bc;"><th style="text-align:left;">第幾年</th>${showSh ? '<th>年底股數</th><th>年底股價</th>' : ''}<th>市值</th><th>投入本金</th><th>當年股息</th><th>每月約</th><th>累積股息</th></tr></thead><tbody>`
     + rows.map(r => `<tr style="text-align:right; border-bottom:1px solid #eee6d8;"><td style="text-align:left;">第 ${r.year} 年</td>${showSh ? `<td>${savingFmt(r.shares)}</td><td>${savingFmt1(r.price)}</td>` : ''}<td>${savingFmt(r.value)}</td><td>${savingFmt(r.invested)}</td><td>${savingFmt(r.divYear)}</td><td>${savingFmt(r.divYear / 12)}</td><td>${savingFmt(r.cumDiv)}</td></tr>`).join('')
     + '</tbody></table>';
   savingDrawChart(rows);
@@ -289,9 +289,9 @@ function savingRenderGoal() {
   const box = document.getElementById('savingGoalResult');
   if (!box) return;
   const g = savingCalc, t = Number(g.goalMonthly) || 0;
-  if (t <= 0) { box.innerHTML = '<span style="color:#93897a;">填一個目標，就會算出要等幾年、或每月要多投入多少。</span>'; return; }
+  if (t <= 0) { box.innerHTML = '<span style="color:#98806a;">填一個目標，就會算出要等幾年、或每月要多投入多少。</span>'; return; }
   const r = savingGoal(g.cards, g, t);
-  if (r.noStocks) { box.innerHTML = '<span style="color:#b6533c;">請先在上面至少填一檔有股價的股票。</span>'; return; }
+  if (r.noStocks) { box.innerHTML = '<span style="color:#b5424d;">請先在上面至少填一檔有股價的股票。</span>'; return; }
   const lines = [];
   lines.push(r.yearsNeeded ? `照目前的設定，<b>第 ${r.yearsNeeded} 年</b>每月股息可以達到 NT$ ${savingFmt(t)}。` : `照目前的設定，60 年內每月股息都達不到 NT$ ${savingFmt(t)}。`);
   if (r.impossible) lines.push(`想在 ${r.years} 年內達到，不管每月投入多少都算不出來（可能殖利率是 0）。`);

@@ -5,9 +5,9 @@
       gap: 16px;
       margin-bottom: 16px;
       padding: 14px 20px;
-      background: #4a4438;
-      color: #f4f0e8;
-      border-radius: 3px;
+      background: #7b5646;
+      color: #f8ecda;
+      border-radius: 20px;
     }
     .app-header-title { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
     .app-tabs { display: flex; gap: 6px; }
@@ -16,20 +16,20 @@
       border: 1px solid rgba(244,240,232,0.35);
       border-radius: 2px;
       background: transparent;
-      color: #f4f0e8;
+      color: #f8ecda;
       font-weight: 500;
       font-size: 13px;
       cursor: pointer;
       transition: background-color 0.2s;
     }
     .app-tab-btn:hover { background: rgba(244,240,232,0.12); }
-    .app-tab-btn.active { background: #f4f0e8; color: #3c362e; border-color: #f4f0e8; }
+    .app-tab-btn.active { background: #f8ecda; color: #5b4333; border-color: #f4f0e8; }
     .app-header-cloud { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 12px; }
-    .app-header-cloud .btn { font-size: 12px; padding: 6px 12px; background: transparent; color: #f4f0e8; border-color: rgba(244,240,232,0.35); }
+    .app-header-cloud .btn { font-size: 12px; padding: 6px 12px; background: transparent; color: #f8ecda; border-color: rgba(244,240,232,0.35); }
     .app-header-cloud .btn:hover { background: rgba(244,240,232,0.12); }
-    .app-header-cloud #syncStatus { color: #ddd5c4; }
-    .app-header-cloud .usd-rate-box { display: inline-flex; align-items: center; gap: 6px; color: #ddd5c4; white-space: nowrap; }
-    .app-header-cloud .usd-rate-box input { width: 64px; font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(244,240,232,0.35); background: rgba(244,240,232,0.08); color: #f4f0e8; }
+    .app-header-cloud #syncStatus { color: #c9b296; }
+    .app-header-cloud .usd-rate-box { display: inline-flex; align-items: center; gap: 6px; color: #c9b296; white-space: nowrap; }
+    .app-header-cloud .usd-rate-box input { width: 64px; font-size: 12px; padding: 4px 6px; border-radius: 10px; border: 1px solid rgba(244,240,232,0.35); background: rgba(244,240,232,0.08); color: #f8ecda; }
 
 /* ====== 懸浮小型計算機 (全域版本，financeView / stockView 皆可使用) ======
    與 stock.css 內 #stockView 專用樣式規則相同，僅移除 #stockView 前綴、
@@ -40,25 +40,25 @@
   right: 40px;
   width: 240px;
   background: #ffffff;
-  border: 1px solid #ddd5c4;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  border: 1px solid #ecd8bc;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(120,80,50,0.15);
   z-index: 1000;
   display: none;
   user-select: none;
   overflow: hidden;
 }
 #floatingCalculator .calc-header {
-  background: #ece7dc;
+  background: #f1e2c9;
   padding: 8px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: move;
-  border-bottom: 1px solid #ddd5c4;
+  border-bottom: 1px solid #ecd8bc;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #5c5445;
+  color: #6b4c3a;
 }
 #floatingCalculator .calc-body { padding: 12px; }
 #floatingCalculator .calc-screen {
@@ -70,10 +70,10 @@
   font-size: 1.25rem;
   text-align: right;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   margin-bottom: 10px;
   overflow: hidden;
-  border: 1px solid #5c5445;
+  border: 1px solid #9a3640;
 }
 #floatingCalculator .calc-keys {
   display: grid;
@@ -84,21 +84,21 @@
   padding: 10px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #fdfbf7;
-  border: 1px solid #ddd5c4;
-  border-radius: 6px;
+  background: #fcf4e8;
+  border: 1px solid #ecd8bc;
+  border-radius: 10px;
   cursor: pointer;
   transition: 0.1s;
 }
-#floatingCalculator .calc-btn:hover { background: #ece6d9; }
-#floatingCalculator .calc-btn.op { background: #eef0e6; color: #5c5445; border-color: #ddd5c4; }
-#floatingCalculator .calc-btn.op:hover { background: #ece7dc; }
-#floatingCalculator .calc-btn.eq { background: #766c5a; color: #fff; border-color: #766c5a; grid-column: span 2; }
-#floatingCalculator .calc-btn.eq:hover { background: #5c5445; }
-#floatingCalculator .calc-btn.clear { background: #f5eee0; color: #b6533c; border-color: #ddc4b3; }
-#floatingCalculator .calc-btn.clear:hover { background: #f0e2da; }
-#floatingCalculator .btn-del { color: #b3a998; border: none; background: transparent; padding: 4px 8px; font-size: 0.9rem; cursor: pointer; }
-#floatingCalculator .btn-del:hover { color: #b6533c; }
+#floatingCalculator .calc-btn:hover { background: #f1e2c9; }
+#floatingCalculator .calc-btn.op { background: #dbeed7; color: #6b4c3a; border-color: #ecd8bc; }
+#floatingCalculator .calc-btn.op:hover { background: #f1e2c9; }
+#floatingCalculator .calc-btn.eq { background: #b5424d; color: #fff; border-color: #b5424d; grid-column: span 2; }
+#floatingCalculator .calc-btn.eq:hover { background: #9a3640; }
+#floatingCalculator .calc-btn.clear { background: #f8e9cf; color: #b5424d; border-color: #efcfb3; }
+#floatingCalculator .calc-btn.clear:hover { background: #f6dcd0; }
+#floatingCalculator .btn-del { color: #b9a28c; border: none; background: transparent; padding: 4px 8px; font-size: 0.9rem; cursor: pointer; }
+#floatingCalculator .btn-del:hover { color: #b5424d; }
 
 /* ========================================================================
    RWD：手機／小螢幕 (≤ 640px) 版面調整
@@ -282,10 +282,10 @@
   padding: 6px 4px;
   font-size: 0.85rem;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 .lock-settings-item:hover {
-  background: #f4ecd4;
+  background: #fbebbd;
 }
 .lock-settings-item input[type="checkbox"] {
   cursor: pointer;

@@ -211,7 +211,7 @@
     }
 
     /* ====== 股利分頁：現金股利長條圖 + 領取比例圓餅圖（持股中／已售出用不同顏色）====== */
-    const STOCK_ANALYSIS_HELD_COLOR = 'rgba(118,108,90,0.85)';
+    const STOCK_ANALYSIS_HELD_COLOR = 'rgba(181,66,77,0.85)';
     const STOCK_ANALYSIS_PAST_COLOR = 'rgba(168,84,61,0.6)';
 
     function getStockAnalysisDividendData() {

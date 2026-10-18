@@ -127,7 +127,7 @@
       const toast = document.createElement('div');
       const isError = type === 'error';
       toast.textContent = msg;
-      toast.style.cssText = `pointer-events:auto; max-width:90vw; padding:10px 18px; border-radius:8px; font-size:0.85rem; font-weight:600; color:#fff; box-shadow:0 6px 18px rgba(0,0,0,0.2); background:${isError ? '#a8543d' : '#4a7c59'};`;
+      toast.style.cssText = `pointer-events:auto; max-width:90vw; padding:10px 18px; border-radius:14px; font-size:0.85rem; font-weight:600; color:#fff; box-shadow:0 6px 18px rgba(120,80,50,0.2); background:${isError ? '#a8543d' : '#4a7c59'};`;
       box.appendChild(toast);
       setTimeout(() => {
         toast.style.transition = 'opacity 0.4s';

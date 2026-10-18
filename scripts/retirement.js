@@ -549,7 +549,7 @@ function updateRetirementResults() {
     retirementChart = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: { labels, datasets: [
-        { label: '全體總資產（股票＋退休專戶）', borderColor: '#766c5a', backgroundColor: 'rgba(118,108,90,0.10)', data: c.total, borderWidth: 3, fill: true, tension: 0.2 },
+        { label: '全體總資產（股票＋退休專戶）', borderColor: '#766c5a', backgroundColor: 'rgba(181,66,77,0.10)', data: c.total, borderWidth: 3, fill: true, tension: 0.2 },
         { label: '股票市值', borderColor: '#4a7c59', borderDash: [5, 5], data: c.stock, borderWidth: 2, tension: 0.2 },
         { label: '股災情境下的股票市值', borderColor: '#a8543d', borderDash: [3, 3], data: c.crash, borderWidth: 1.5, tension: 0.2 }
       ] },

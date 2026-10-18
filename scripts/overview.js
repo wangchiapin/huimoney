@@ -425,7 +425,7 @@ function ovDrawCharts(calc) {
   const css = getComputedStyle(document.documentElement);
   const textColor = (css.getPropertyValue('--text-main') || '#3c362e').trim();
   const mutedColor = (css.getPropertyValue('--text-muted') || '#93897a').trim();
-  const gridColor = 'rgba(118,108,90,0.15)';
+  const gridColor = 'rgba(181,66,77,0.15)';
   const C = { cashTwd: '#7d9a8c', cashUsd: '#a9c2b6', stock: '#b08d57', insurance: '#8a93a8', cost: '#ddd5c4', div: '#b08d57', yf: '#d9b98a', lend: '#7d9a8c' };
   const money = v => 'NT$' + Math.round(v).toLocaleString('zh-TW');
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;

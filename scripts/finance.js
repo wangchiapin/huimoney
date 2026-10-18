@@ -323,7 +323,7 @@
       const rect = btn.getBoundingClientRect();
       const pop = document.createElement('div');
       pop.id = 'noteEditorPopover';
-      pop.style.cssText = 'position:fixed; top:' + (rect.bottom + 4) + 'px; left:' + Math.max(8, rect.left - 90) + 'px; width:220px; background:var(--card-bg); border:1px solid var(--border-color); border-radius:4px; box-shadow:0 4px 14px rgba(60,54,46,0.18); padding:8px; z-index:2000;';
+      pop.style.cssText = 'position:fixed; top:' + (rect.bottom + 4) + 'px; left:' + Math.max(8, rect.left - 90) + 'px; width:220px; background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 14px rgba(120,80,50,0.18); padding:8px; z-index:2000;';
       const safeVal = (state.colNotes[colIdx] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       pop.innerHTML =
         '<textarea id="noteEditorTextarea" style="width:100%; height:70px; font-family:inherit; font-size:12px; border:1px solid var(--border-color); border-radius:2px; padding:4px; resize:vertical;">' + safeVal + '</textarea>' +
@@ -529,10 +529,10 @@
 
       const modal = document.createElement('div');
       modal.id = 'archiveModal';
-      modal.style.cssText = 'position:fixed; inset:0; background:rgba(60,54,46,0.35); z-index:3000; display:flex; align-items:center; justify-content:center;';
+      modal.style.cssText = 'position:fixed; inset:0; background:rgba(120,80,50,0.35); z-index:3000; display:flex; align-items:center; justify-content:center;';
       modal.innerHTML =
-        '<div style="background:var(--card-bg); border-radius:6px; width:440px; max-width:90vw; max-height:70vh; overflow:auto; box-shadow:0 8px 30px rgba(0,0,0,0.25);">' +
-          '<div style="background:#4a4438; color:#f4f0e8; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:500; position:sticky; top:0;">' +
+        '<div style="background:var(--card-bg); border-radius:10px; width:440px; max-width:90vw; max-height:70vh; overflow:auto; box-shadow:0 8px 30px rgba(120,80,50,0.25);">' +
+          '<div style="background:#7b5646; color:#f8ecda; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:500; position:sticky; top:0;">' +
             '<span>🗄️ 封存管理</span><span style="cursor:pointer;" onclick="closeArchiveManager()">✖</span>' +
           '</div>' +
           '<div style="padding:8px 16px;">' + rowsHtml + '</div>' +

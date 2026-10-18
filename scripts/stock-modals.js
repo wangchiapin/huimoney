@@ -34,7 +34,7 @@
             <td class="font-mono">${esc(r.date)}</td>
             <td class="font-mono">$${formatNum(r.cash, 0)}</td>
           </tr>
-        `).join('') : `<tr><td colspan="3" style="color:#93897a;">該年度沒有現金股利紀錄</td></tr>`;
+        `).join('') : `<tr><td colspan="3" style="color:#98806a;">該年度沒有現金股利紀錄</td></tr>`;
       }
 
       const totalEl = document.getElementById('yearlyDivDetailTotal');

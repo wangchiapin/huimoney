@@ -1,15 +1,15 @@
 /* 退休試算 (#retirementView)：沿用 finance.css 的色票 */
 #retirementView { padding: 0 12px 40px; }
 .ret-page { max-width: 1000px; margin: 16px auto; }
-.ret-disclaimer, .ret-sample, .ret-warning, .ret-info { border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.7; margin-bottom: 12px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); }
+.ret-disclaimer, .ret-sample, .ret-warning, .ret-info { border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.7; margin-bottom: 12px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); }
 .ret-sample { background: #f3ecd8; }
 .ret-warning { background: #f6e3dc; color: var(--danger); border-color: var(--danger); }
-.ret-group { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+.ret-group { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
 .ret-group h3 { margin: 0 0 10px; font-size: 15px; color: var(--text-main); }
 .ret-group h3 small { color: var(--text-muted); font-weight: normal; font-size: 12px; }
 .ret-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .ret-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-main); }
-.ret-input { padding: 7px 9px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; font-size: 14px; width: 100%; box-sizing: border-box; }
+.ret-input { padding: 7px 9px; border: 1px solid var(--border-color); border-radius: 10px; background: #fff; font-size: 14px; width: 100%; box-sizing: border-box; }
 .ret-input-name { min-width: 120px; }
 .ret-hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 4px; }
 .ret-radios { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 13px; }
@@ -17,21 +17,21 @@
 .ret-radio, .ret-check { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .ret-slider-row { display: flex; align-items: center; gap: 10px; }
 .ret-slider-row input[type=range] { flex: 1; accent-color: var(--primary); }
-.ret-badge { min-width: 64px; text-align: center; background: #ece6d9; border-radius: 12px; padding: 2px 10px; font-size: 13px; font-weight: 600; }
+.ret-badge { min-width: 64px; text-align: center; background: #f1e2c9; border-radius: 18px; padding: 2px 10px; font-size: 13px; font-weight: 600; }
 .ret-table-wrap { overflow-x: auto; margin-bottom: 8px; }
 .ret-table { width: 100%; border-collapse: collapse; }
 .ret-table th, .ret-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-color); font-size: 13px; text-align: center; }
-.ret-table th { background: #ece6d9; }
+.ret-table th { background: #f1e2c9; }
 .ret-empty { color: var(--text-muted); padding: 14px; }
 .ret-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 12px; }
-.ret-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; }
+.ret-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; }
 .ret-card-main { border-color: var(--primary); background: #f3ecd8; }
 .ret-card-title { font-size: 12px; color: var(--text-muted); }
 .ret-card-val { font-size: 24px; font-weight: 700; margin: 6px 0; color: var(--text-main); }
 .ret-card-sub { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-.ret-chart-box { position: relative; height: 340px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+.ret-chart-box { position: relative; height: 340px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 10px; margin-bottom: 12px; }
 @media (max-width: 600px) { .ret-card-val { font-size: 20px; } }
-.ret-detail-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+.ret-detail-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--border-color); border-radius: 14px; }
 .ret-detail th, .ret-detail td { text-align: right; white-space: nowrap; }
 .ret-detail th:first-child, .ret-detail td:first-child { text-align: center; }
 .ret-detail thead th { position: sticky; top: 0; z-index: 2; }
@@ -40,13 +40,13 @@
 .ret-growth-cell select { margin-bottom: 4px; }
 .ret-notcounted ul { margin: 0 0 8px 18px; padding: 0; font-size: 13px; line-height: 1.8; color: var(--text-main); }
 .ret-hint a, .ret-notcounted a { color: var(--primary); text-decoration: underline; }
-.ret-acc-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fff; }
+.ret-acc-card { border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; margin-bottom: 10px; background: #fff; }
 .ret-acc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
 .ret-acc-head .ret-input-name { flex: 1; min-width: 160px; font-weight: 600; }
 .ret-acc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 .ret-span { grid-column: 1 / -1; margin-top: 0; }
-.ret-help { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-left: 4px; border-radius: 50%; background: #ece6d9; color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; user-select: none; vertical-align: middle; }
+.ret-help { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-left: 4px; border-radius: 50%; background: #f1e2c9; color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; user-select: none; vertical-align: middle; }
 .ret-help:hover, .ret-help:focus { background: var(--primary); color: #fff; outline: none; }
-.ret-help-text { display: none; margin-top: 4px; padding: 8px 10px; background: #f3ecd8; border-radius: 6px; font-size: 12px; line-height: 1.7; color: var(--text-main); font-weight: normal; }
+.ret-help-text { display: none; margin-top: 4px; padding: 8px 10px; background: #f3ecd8; border-radius: 10px; font-size: 12px; line-height: 1.7; color: var(--text-main); font-weight: normal; }
 .ret-help-text.open { display: block; }
 @media (max-width: 600px) { .ret-grid { grid-template-columns: 1fr; } .ret-slider-row { min-width: 0; } .ret-acc-grid { grid-template-columns: 1fr; } }

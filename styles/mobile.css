@@ -10,7 +10,7 @@
 
 @media (max-width: 760px) {
   .mb-only { display: block; }
-  body { padding: 6px 6px calc(70px + env(safe-area-inset-bottom)) !important; }
+  body { padding: 6px 6px calc(86px + env(safe-area-inset-bottom)) !important; }
 
   /* ---------- 標題列：只留一行 ---------- */
   .app-header {
@@ -19,13 +19,13 @@
     gap: 8px !important;
     padding: 9px 12px !important;
     margin-bottom: 8px !important;
-    border-radius: 8px !important;
+    border-radius: 14px !important;
   }
   .app-header-title { font-size: 0.98rem !important; flex: 1; overflow: hidden; text-overflow: ellipsis; }
   .mb-header-more {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 32px; border-radius: 8px;
-    border: 1px solid rgba(244,240,232,0.35); background: transparent; color: #f4f0e8;
+    width: 36px; height: 32px; border-radius: 14px;
+    border: 1px solid rgba(244,240,232,0.35); background: transparent; color: #f8ecda;
     font-size: 1.2rem; line-height: 1; cursor: pointer;
   }
   /* 匯率、同步狀態、登入：收進 ⋯ 選單 */
@@ -34,7 +34,7 @@
     display: flex !important; flex-direction: column; align-items: stretch; gap: 10px !important;
     position: absolute; top: calc(100% + 6px); right: 6px; z-index: 1600;
     min-width: 230px; padding: 12px; margin: 0 !important;
-    background: #4a4438; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    background: #7b5646; border-radius: 16px; box-shadow: 0 8px 24px rgba(120,80,50,0.25);
     font-size: 13px !important;
   }
   .app-header.mb-menu-open .app-header-cloud .usd-rate-box { justify-content: space-between; }
@@ -43,24 +43,24 @@
 
   /* ---------- 分頁按鈕：移到畫面最下方 ---------- */
   .app-tabs {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
-    display: flex !important; gap: 0 !important;
-    background: #fdfbf7; border-top: 1px solid #ddd5c4;
-    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
-    box-shadow: 0 -2px 10px rgba(60,54,46,0.06);
+    position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 900;
+    display: flex !important; gap: 2px !important;
+    background: #fcf4e8; border: 1px solid #ecd8bc; border-radius: 999px;
+    padding: 5px;
+    box-shadow: 0 6px 18px rgba(150,100,60,0.2);
   }
   .app-tab-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
-    border: none !important; border-radius: 8px !important; background: transparent !important;
-    color: #93897a !important; padding: 5px 0 4px !important; font-size: 10.5px !important;
+    border: none !important; border-radius: 999px !important; background: transparent !important;
+    color: #98806a !important; padding: 5px 0 4px !important; font-size: 10.5px !important;
   }
   .app-tab-btn .tab-ic { font-size: 19px; line-height: 1.1; filter: grayscale(0.6); opacity: 0.75; }
-  .app-tab-btn.active { color: #3c362e !important; font-weight: 700 !important; background: #f1ebdf !important; }
+  .app-tab-btn.active { color: #5b4333 !important; font-weight: 700 !important; background: #f8d7ae !important; }
   .app-tab-btn.active .tab-ic { filter: none; opacity: 1; }
 
   /* 浮動元件不要蓋住底部分頁 */
-  .tips-widget { bottom: calc(80px + env(safe-area-inset-bottom)) !important; left: 10px !important; z-index: 800 !important; }
-  #globalToastBox { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+  .tips-widget { bottom: calc(92px + env(safe-area-inset-bottom)) !important; left: 10px !important; z-index: 800 !important; }
+  #globalToastBox { bottom: calc(92px + env(safe-area-inset-bottom)) !important; }
 
   /* 操作指南寫的是鍵盤快捷鍵，手機用不到 */
   .help-tips { display: none !important; }
@@ -72,32 +72,32 @@
     animation: mbFade 0.15s ease-out;
   }
   .mb-sheet {
-    background: #fdfbf7; color: #3c362e; border-radius: 16px 16px 0 0;
+    background: #fcf4e8; color: #5b4333; border-radius: 22px 16px 0 0;
     max-height: 88vh; overflow-y: auto; padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
     animation: mbUp 0.18s ease-out;
   }
-  .mb-sheet-grab { width: 38px; height: 4px; border-radius: 2px; background: #ddd5c4; margin: 4px auto 10px; }
+  .mb-sheet-grab { width: 38px; height: 4px; border-radius: 2px; background: #ecd8bc; margin: 4px auto 10px; }
   .mb-sheet-title { font-size: 1.02rem; font-weight: 700; margin-bottom: 2px; }
-  .mb-sheet-sub { font-size: 0.78rem; color: #93897a; margin-bottom: 12px; }
+  .mb-sheet-sub { font-size: 0.78rem; color: #98806a; margin-bottom: 12px; }
   .mb-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .mb-field label { display: block; font-size: 0.74rem; color: #93897a; margin-bottom: 3px; }
+  .mb-field label { display: block; font-size: 0.74rem; color: #98806a; margin-bottom: 3px; }
   .mb-field input {
     width: 100%; box-sizing: border-box; font-size: 16px; padding: 9px 10px;
-    border: 1px solid #ddd5c4; border-radius: 8px; background: #fff; color: #3c362e; font-family: inherit;
+    border: 1px solid #ecd8bc; border-radius: 14px; background: #fff; color: #5b4333; font-family: inherit;
   }
-  .mb-field .mb-ro { padding: 9px 10px; border-radius: 8px; background: #f1ebdf; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .mb-field .mb-ro { padding: 9px 10px; border-radius: 14px; background: #f1ebdf; font-size: 15px; font-variant-numeric: tabular-nums; }
   .mb-row-btns { display: flex; gap: 8px; margin-bottom: 10px; }
   .mb-row-btns button, .mb-actions button, .mb-menu-list button {
-    flex: 1; padding: 11px 8px; border-radius: 10px; border: 1px solid #ddd5c4;
-    background: #fff; color: #3c362e; font-size: 0.9rem; font-family: inherit; cursor: pointer;
+    flex: 1; padding: 11px 8px; border-radius: 16px; border: 1px solid #ecd8bc;
+    background: #fff; color: #5b4333; font-size: 0.9rem; font-family: inherit; cursor: pointer;
   }
   .mb-actions { display: flex; gap: 8px; }
-  .mb-actions .mb-primary-btn { background: #766c5a; border-color: #766c5a; color: #fff; font-weight: 700; }
-  .mb-actions .mb-danger-btn { color: #b6533c; flex: 0 0 auto; padding: 11px 14px; }
+  .mb-actions .mb-primary-btn { background: #b5424d; border-color: #b5424d; color: #fff; font-weight: 700; }
+  .mb-actions .mb-danger-btn { color: #b5424d; flex: 0 0 auto; padding: 11px 14px; }
   .mb-menu-list { display: flex; flex-direction: column; gap: 8px; }
   .mb-menu-list button { text-align: left; padding: 13px 14px; }
-  .mb-menu-list .mb-danger-btn { color: #b6533c; }
-  .mb-note { font-size: 0.78rem; color: #93897a; margin: -4px 0 12px; }
+  .mb-menu-list .mb-danger-btn { color: #b5424d; }
+  .mb-note { font-size: 0.78rem; color: #98806a; margin: -4px 0 12px; }
   @keyframes mbUp { from { transform: translateY(30px); opacity: 0.6; } to { transform: none; opacity: 1; } }
   @keyframes mbFade { from { opacity: 0; } to { opacity: 1; } }
 
@@ -126,15 +126,15 @@
   /* 數字卡片：兩欄、縮小；分頁專屬的那排預設收起來 */
   body #stockView .dashboards-wrapper { gap: 6px !important; margin-bottom: 6px !important; }
   body #stockView .dashboard { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important; }
-  body #stockView .stat-card { padding: 8px 8px !important; border-radius: 10px !important; }
+  body #stockView .stat-card { padding: 8px 8px !important; border-radius: 16px !important; }
   body #stockView .stat-title { font-size: 0.68rem !important; margin-bottom: 1px !important; }
   body #stockView .stat-value { font-size: 1.02rem !important; }
   body #stockView .stat-desc { font-size: 0.66rem !important; }
   body #stockView #subDashboardContainer { display: none !important; }
   body #stockView.mb-more-stats #subDashboardContainer { display: grid !important; }
   #stockView .mb-more-stats-btn {
-    display: block; width: 100%; margin: 0 0 8px; padding: 7px; border-radius: 8px;
-    border: 1px dashed #ddd5c4; background: transparent; color: #766c5a; font-size: 0.8rem; font-family: inherit;
+    display: block; width: 100%; margin: 0 0 8px; padding: 7px; border-radius: 14px;
+    border: 1px dashed #ecd8bc; background: transparent; color: #8a6a55; font-size: 0.8rem; font-family: inherit;
   }
 
   /* 工具列：只留常用按鈕，其他收進「⋯ 更多」 */
@@ -144,8 +144,8 @@
   #stockView .toolbar-bar .btn { min-height: 40px !important; padding: 8px 10px !important; font-size: 0.82rem !important; }
   #stockView .mb-toolbar-more {
     display: inline-flex; align-items: center; justify-content: center;
-    flex: 0 0 auto !important; min-height: 40px; padding: 8px 12px; border-radius: 6px;
-    border: 1px solid #ddd5c4; background: #fdfbf7; color: #3c362e; font-size: 0.82rem; font-family: inherit;
+    flex: 0 0 auto !important; min-height: 40px; padding: 8px 12px; border-radius: 10px;
+    border: 1px solid #ecd8bc; background: #fcf4e8; color: #5b4333; font-size: 0.82rem; font-family: inherit;
   }
 
   /* 子分頁：單排左右滑，右邊淡出提示還有 */
@@ -163,20 +163,20 @@
   #stockView.mb-cards-mode #topScrollWrapper { display: none !important; }
   #stockView .mb-stock-cards { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
   #stockView .mb-stock-card {
-    background: #fdfbf7; border: 1px solid #ddd5c4; border-radius: 12px; padding: 10px 12px;
-    color: #3c362e; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    background: #fcf4e8; border: 1px solid #ecd8bc; border-radius: 18px; padding: 10px 12px;
+    color: #5b4333; cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
   #stockView .mb-stock-card:active { background: #f1ebdf; }
   #stockView .mb-sc-r1, #stockView .mb-sc-r2, #stockView .mb-sc-r3 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .mb-sc-name { font-weight: 700; font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mb-sc-name small { font-weight: 500; color: #93897a; font-size: 0.75rem; }
+  .mb-sc-name small { font-weight: 500; color: #98806a; font-size: 0.75rem; }
   .mb-sc-val { font-weight: 700; font-size: 0.95rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  #stockView .mb-sc-r2 { margin-top: 3px; font-size: 0.76rem; color: #93897a; }
+  #stockView .mb-sc-r2 { margin-top: 3px; font-size: 0.76rem; color: #98806a; }
   .mb-sc-r2 span:last-child { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  #stockView .mb-sc-r3 { margin-top: 3px; font-size: 0.72rem; color: #b3a998; }
-  .mb-up { color: var(--up-red, #b6533c) !important; }
-  .mb-down { color: var(--down-green, #4a7c59) !important; }
-  #stockView .mb-empty { text-align: center; color: #93897a; padding: 30px 0; font-size: 0.85rem; }
+  #stockView .mb-sc-r3 { margin-top: 3px; font-size: 0.72rem; color: #b9a28c; }
+  .mb-up { color: var(--up-red, #b5424d) !important; }
+  .mb-down { color: var(--down-green, #4a8a5a) !important; }
+  #stockView .mb-empty { text-align: center; color: #98806a; padding: 30px 0; font-size: 0.85rem; }
 
   /* ================= 第二階段 ================= */
 
@@ -185,18 +185,18 @@
     display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none;
     position: sticky; top: 0; z-index: 60;
     margin: 0 -6px 8px; padding: 6px 6px 7px;
-    background: var(--bg-color, #f4f0e8);
+    background: var(--bg-color, #f8ecda);
     -webkit-mask-image: linear-gradient(to right, #000 92%, transparent);
             mask-image: linear-gradient(to right, #000 92%, transparent);
   }
   #stockView .mb-section-bar::-webkit-scrollbar { display: none; }
   #stockView .mb-section-bar button {
     flex: 1 0 auto; padding: 8px 12px; border-radius: 999px;
-    border: 1px solid #ddd5c4; background: #fdfbf7; color: #766c5a;
+    border: 1px solid #ecd8bc; background: #fcf4e8; color: #8a6a55;
     font-size: 0.86rem; font-family: inherit; white-space: nowrap; cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  #stockView .mb-section-bar button.active { background: #5c5445; border-color: #5c5445; color: #fff; font-weight: 700; }
+  #stockView .mb-section-bar button.active { background: #9a3640; border-color: #9a3640; color: #fff; font-weight: 700; }
   #stockView .mb-section-bar button:last-child { margin-right: 18px; }
 
   /* 原本那排裡的賣出、借出…按鈕在手機上收掉（已經在上排了） */
@@ -239,32 +239,32 @@
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-table-cards { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-table-cards:empty { display: none; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tcard {
-    background: #fdfbf7; border: 1px solid #ddd5c4; border-radius: 12px; padding: 10px 12px;
-    color: #3c362e; -webkit-tap-highlight-color: transparent;
+    background: #fcf4e8; border: 1px solid #ecd8bc; border-radius: 18px; padding: 10px 12px;
+    color: #5b4333; -webkit-tap-highlight-color: transparent;
   }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tcard.mb-tappable { cursor: pointer; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tcard.mb-tappable:active { background: #f1ebdf; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tcard-total { background: #f1ebdf; border-style: dashed; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-head { display: flex; align-items: baseline; gap: 8px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-title { font-weight: 700; font-size: 0.95rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-sub { font-size: 0.74rem; color: #93897a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-arrow { margin-left: auto; color: #b3a998; font-size: 1.1rem; line-height: 1; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-sub { font-size: 0.74rem; color: #98806a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-tc-arrow { margin-left: auto; color: #b9a28c; font-size: 1.1rem; line-height: 1; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kvs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; margin-top: 6px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kvs.mb-kvs-1 { grid-template-columns: minmax(0, 1fr); }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kv { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 0.78rem; min-width: 0; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kv > span { color: #93897a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kv > span { color: #98806a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kv > b { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-colcard .mb-kv { padding: 3px 0; border-bottom: 1px dotted #e8e1d3; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-colcard .mb-kv:last-child { border-bottom: none; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-kv .mb-cell-clone { max-width: 55%; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-row-heading { font-weight: 700; color: #5c5445; font-size: 0.85rem; padding: 10px 2px 0; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-row-heading { font-weight: 700; color: #6b4c3a; font-size: 0.85rem; padding: 10px 2px 0; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-row-heading .btn, :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-empty .btn { margin-top: 8px; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-table-cards .mb-empty { text-align: center; color: #93897a; padding: 26px 8px; font-size: 0.85rem; background: #fdfbf7; border: 1px dashed #ddd5c4; border-radius: 12px; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-table-cards .mb-empty { text-align: center; color: #98806a; padding: 26px 8px; font-size: 0.85rem; background: #fcf4e8; border: 1px dashed #ecd8bc; border-radius: 18px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-inline-row {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-    background: #fdfbf7; border: 1px solid #ece6d9; border-radius: 10px; font-size: 0.82rem;
+    background: #fcf4e8; border: 1px solid #f1e2c9; border-radius: 16px; font-size: 0.82rem;
   }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-inline-label { flex: 1; min-width: 0; color: #5c5445; font-weight: 700; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-inline-label { flex: 1; min-width: 0; color: #6b4c3a; font-weight: 700; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-inline-val { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-inline-row .mb-cell-clone { max-width: 45%; }
 
@@ -272,9 +272,9 @@
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone { display: flex; align-items: center; gap: 6px; min-width: 0; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone input, :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone select, :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone textarea {
     flex: 1; min-width: 0; width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px;
-    border: 1px solid #ddd5c4; border-radius: 8px; background: #fff; color: #3c362e; font-family: inherit; text-align: left;
+    border: 1px solid #ecd8bc; border-radius: 14px; background: #fff; color: #5b4333; font-family: inherit; text-align: left;
   }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone button { font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd5c4; background: #fff; color: #3c362e; font-family: inherit; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone button { font-size: 0.9rem; padding: 8px 10px; border-radius: 14px; border: 1px solid #ecd8bc; background: #fff; color: #5b4333; font-family: inherit; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-cell-clone .dca-date-picker-btn { width: 100%; text-align: left; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-fields.mb-fields-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-fields.mb-fields-1 .mb-field .mb-ro { min-height: 20px; word-break: break-all; }
@@ -282,24 +282,24 @@
   /* 月份／年度區塊（每日買賣紀錄小計、非持股股利） */
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-top {
     display: flex; justify-content: space-between; align-items: baseline;
-    background: #ece6d9; border-radius: 10px; padding: 10px 12px; font-size: 0.86rem; color: #5c5445;
+    background: #f1e2c9; border-radius: 16px; padding: 10px 12px; font-size: 0.86rem; color: #6b4c3a;
   }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-top b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group { background: #fdfbf7; border: 1px solid #ddd5c4; border-radius: 12px; overflow: hidden; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group { background: #fcf4e8; border: 1px solid #ecd8bc; border-radius: 18px; overflow: hidden; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 9px 12px; background: #f1ebdf; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-title { font-weight: 700; font-size: 0.92rem; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-foot { display: flex; gap: 10px; font-size: 0.76rem; color: #766c5a; flex-wrap: wrap; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-foot { display: flex; gap: 10px; font-size: 0.76rem; color: #8a6a55; flex-wrap: wrap; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-foot b { font-variant-numeric: tabular-nums; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-group-body { padding: 4px 12px 8px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px dotted #e8e1d3; font-size: 0.84rem; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair:last-child { border-bottom: none; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair-head { font-size: 0.72rem; color: #93897a; padding-bottom: 2px; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair-head { font-size: 0.72rem; color: #98806a; padding-bottom: 2px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair-b { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; justify-content: flex-end; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair-new { opacity: 0.75; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .mb-cell-clone input { padding: 6px 8px; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .stock-cell-wrap { display: flex; flex-direction: column; gap: 2px; width: 100%; min-width: 0 !important; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .stock-cell-box { display: flex; gap: 4px; width: 100%; }
-  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .stock-cell-date { font-size: 0.68rem; color: #b3a998; }
+  :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .stock-cell-date { font-size: 0.68rem; color: #b9a28c; }
   :is(#stockView, #insuranceView, #mbSheetOverlay) .mb-pair .btn-cal-icon { padding: 4px 8px; }
 
   /* 股利「歷年股利總合」：表格跟折線圖上下排 */
@@ -347,7 +347,7 @@
   .row-label .badge-auto { font-size: 0.58rem !important; padding: 0 4px !important; }
   td.row-label.mb-label-tappable { cursor: pointer; }
   td.row-label.mb-label-tappable::after {
-    content: '⋯'; position: absolute; right: 3px; top: 1px; font-size: 0.65rem; color: #b3a998;
+    content: '⋯'; position: absolute; right: 3px; top: 1px; font-size: 0.65rem; color: #b9a28c;
   }
   #financeTable th:not(.row-label), #financeTable td:not(.row-label) {
     min-width: 84px !important; font-size: 0.78rem !important; padding: 4px 6px !important;

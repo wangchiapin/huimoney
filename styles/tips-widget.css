@@ -8,10 +8,10 @@
   bottom: 90px;
   width: 300px;
   max-width: calc(100vw - 40px);
-  background: var(--card-bg, #fdfbf7);
-  border: 1px solid var(--border-color, #ddd5c4);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(60, 54, 46, 0.22);
+  background: var(--card-bg, #fcf4e8);
+  border: 1px solid var(--border-color, #ecd8bc);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(120,80,50, 0.22);
   z-index: 9999;
   display: none;
   flex-direction: column;
@@ -25,7 +25,7 @@
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  background: var(--down-green, #4a7c59);
+  background: var(--down-green, #4a8a5a);
   color: #fff;
   cursor: grab;
   touch-action: none;
@@ -55,7 +55,7 @@
   color: #fff;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 0.82rem;
   line-height: 1;
   cursor: pointer;
@@ -72,7 +72,7 @@
 
 .tips-widget-line {
   font-size: 0.86rem;
-  color: var(--text-main, #3c362e);
+  color: var(--text-main, #5b4333);
   line-height: 1.55;
 }
 .tips-widget-line:first-child { font-weight: 700; }
@@ -88,10 +88,10 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--border-color, #ddd5c4);
+  background: var(--border-color, #ecd8bc);
   cursor: pointer;
 }
-.tips-widget-dot.active { background: var(--down-green, #4a7c59); }
+.tips-widget-dot.active { background: var(--down-green, #4a8a5a); }
 
 .tips-widget-bubble {
   position: fixed;
@@ -100,13 +100,13 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: var(--down-green, #4a7c59);
+  background: var(--down-green, #4a8a5a);
   color: #fff;
   font-size: 1.2rem;
   display: none;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 18px rgba(60, 54, 46, 0.28);
+  box-shadow: 0 6px 18px rgba(120,80,50, 0.28);
   cursor: pointer;
   z-index: 9999;
 }

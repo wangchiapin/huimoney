@@ -500,7 +500,7 @@
           const costCell = l.kind === 'base'
             ? `<input type="number" step="any" class="cell-input font-mono font-bold" value="${esc(sbRound(l.cost))}" title="第一批的成本可以直接改，持股的總成本會跟著變" onfocus="this.select()" onchange="updateBaseLotCost('${esc(String(s.id))}', this.value)" />`
             : `<span class="font-mono">${unit}${formatNum(l.cost, d)}</span>`;
-          const orig = l.kind === 'base' ? '<span style="color:#93897a; font-size:0.78rem;">開始記錄前的持股</span>'
+          const orig = l.kind === 'base' ? '<span style="color:#98806a; font-size:0.78rem;">開始記錄前的持股</span>'
             : `<span class="font-mono" style="font-size:0.8rem;">${formatNum(l.origShares, 0)} 股${l.kind === 'buy' ? ' / ' + unit + formatNum(l.origCost, d) : ''}</span>`;
           return `
             <tr style="background:${band[sIdx % 2]};">

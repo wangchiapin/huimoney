@@ -82,12 +82,12 @@
 
       let headHtml = `<tr>`;
       monthNames.forEach((m, idx) => {
-        const bgHead = idx % 2 === 0 ? 'background:#eef0e6; color:#5c5445;' : 'background:#f4ecd4; color:#6e5439;';
+        const bgHead = idx % 2 === 0 ? 'background:#dbeed7; color:#6b4c3a;' : 'background:#fbebbd; color:#8a5a30;';
         headHtml += `<th colspan="2" style="${bgHead} font-size:0.95rem; text-align:center;">${selectedSummaryYear}年 ${m}</th>`;
       });
       headHtml += `</tr><tr>`;
       monthNames.forEach((m, idx) => {
-        const bgSub = idx % 2 === 0 ? 'background:#fdfbf7; color:#5c5445;' : 'background:#f4ecd4; color:#6e5439;';
+        const bgSub = idx % 2 === 0 ? 'background:#fcf4e8; color:#6b4c3a;' : 'background:#fbebbd; color:#8a5a30;';
         headHtml += `<th style="${bgSub} width:75px;">日期</th><th style="${bgSub} width:85px;">金額</th>`;
       });
       headHtml += `</tr>`;
@@ -98,7 +98,7 @@
         rowsHtml += `<tr>`;
         monthArrays.forEach((arr, mIdx) => {
           const item = arr[r] || { dayStr: '', amount: '' };
-          const cellBg = mIdx % 2 === 0 ? 'background:#fdfbf7;' : 'background:#ffffff;';
+          const cellBg = mIdx % 2 === 0 ? 'background:#fcf4e8;' : 'background:#ffffff;';
           const amtVal = item.amount !== '' && item.amount !== undefined ? item.amount : '';
           const isPos = Number(amtVal) >= 0;
           const amtColor = amtVal !== '' ? (isPos ? 'color:var(--up-red); font-weight:700;' : 'color:var(--down-green); font-weight:700;') : '';
@@ -112,21 +112,21 @@
       }
 
       // 小計 row
-      rowsHtml += `<tr style="background:#ece7dc; font-weight:700;">`;
+      rowsHtml += `<tr style="background:#f1e2c9; font-weight:700;">`;
       const monthSums = monthArrays.map(arr => arr.reduce((s, it) => s + (Number(it.amount) || 0), 0));
       monthNames.forEach((m, idx) => {
         const sVal = monthSums[idx];
         const isPos = sVal >= 0;
         rowsHtml += `
-          <td style="border-top:2px solid #ddd5c4;">小計</td>
-          <td class="font-mono" style="border-top:2px solid #ddd5c4; color:${isPos ? 'var(--up-red)' : 'var(--down-green)'};">${isPos ? '+' : ''}$${formatNum(sVal, 0)}</td>
+          <td style="border-top:2px solid #ecd8bc;">小計</td>
+          <td class="font-mono" style="border-top:2px solid #ecd8bc; color:${isPos ? 'var(--up-red)' : 'var(--down-green)'};">${isPos ? '+' : ''}$${formatNum(sVal, 0)}</td>
         `;
       });
       rowsHtml += `</tr>`;
 
       // 總計 row
       const grandTotal = monthSums.reduce((s, v) => s + v, 0);
-      rowsHtml += `<tr style="background:#ece6d9; font-weight:800; font-size:0.95rem;">`;
+      rowsHtml += `<tr style="background:#f1e2c9; font-weight:800; font-size:0.95rem;">`;
       rowsHtml += `<td colspan="2">總計</td>`;
       rowsHtml += `<td colspan="22" class="font-mono" style="text-align:left; padding-left:16px; color:${grandTotal >= 0 ? 'var(--up-red)' : 'var(--down-green)'};">${grandTotal >= 0 ? '+' : ''}$${formatNum(grandTotal, 0)}</td>`;
       rowsHtml += `</tr>`;
@@ -146,7 +146,7 @@
         return sum;
       });
 
-      rowsHtml += `<tr style="background:#f4ecd4; font-weight:700;">`;
+      rowsHtml += `<tr style="background:#fbebbd; font-weight:700;">`;
       monthNames.forEach((m, idx) => {
         const dtVal = dayTradeSums[idx];
         const isPos = dtVal >= 0;

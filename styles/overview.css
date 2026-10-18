@@ -4,23 +4,23 @@
 #overviewView .ov-title { font-size: 1.35rem; font-weight: 700; }
 #overviewView .ov-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
 #overviewView .ov-actions { display: flex; gap: 8px; }
-#overviewView .ov-note { background: #f6ecd2; border: 1px solid #e6d3a3; color: #7a5a1c; border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; line-height: 1.6; margin-bottom: 8px; }
+#overviewView .ov-note { background: #f6ecd2; border: 1px solid #e6d3a3; color: #7a5a1c; border-radius: 14px; padding: 8px 12px; font-size: 0.8rem; line-height: 1.6; margin-bottom: 8px; }
 #overviewView .ov-cmp-line { margin-bottom: 10px; }
 
 #overviewView .ov-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
-#overviewView .ov-kpi { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 14px; }
-#overviewView .ov-kpi:first-child { background: #f5eee0; border-color: #ddc4b3; }
+#overviewView .ov-kpi { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px 14px; }
+#overviewView .ov-kpi:first-child { background: #f8e9cf; border-color: #efcfb3; }
 #overviewView .ov-kpi-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
 #overviewView .ov-kpi-value { font-size: 1.35rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
 #overviewView .ov-kpi-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
 #overviewView .ov-delta { font-size: 0.75rem; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
-#overviewView .ov-up { color: #4a7c59; }
-#overviewView .ov-down { color: #b6533c; }
+#overviewView .ov-up { color: #4a8a5a; }
+#overviewView .ov-down { color: #b5424d; }
 #overviewView .ov-flat { color: var(--text-muted); }
 #overviewView .ov-muted { color: var(--text-muted); font-weight: normal; }
 
 #overviewView .ov-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
-#overviewView .ov-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 14px; }
+#overviewView .ov-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px 14px; }
 #overviewView .ov-card-wide { grid-column: 1 / -1; }
 #overviewView .ov-card-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
 #overviewView .ov-chart { position: relative; height: 240px; }

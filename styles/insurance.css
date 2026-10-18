@@ -18,7 +18,7 @@
 }
 
 #insuranceView thead th {
-  background: #ece6d9;
+  background: #f1e2c9;
   color: var(--text-main);
   font-weight: 600;
   position: sticky;
@@ -57,7 +57,7 @@
 .ins-status-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 16px;
   font-size: 11px;
   font-weight: 600;
   background: var(--sec-ins);
@@ -101,11 +101,11 @@
 /* ---- 保單編輯 / 詳情彈窗（比照 stock.css 的 .modal-overlay 系列樣式） ---- */
 #insuranceView .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; visibility: hidden; opacity: 0; transition: 0.2s; }
 #insuranceView .modal-overlay.open { visibility: visible; opacity: 1; }
-#insuranceView .modal-card { background: var(--card-bg); width: 650px; max-width: 94vw; max-height: 85vh; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; }
-#insuranceView .modal-header { padding: 14px 18px; background: #4a4438; color: #f4f0e8; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+#insuranceView .modal-card { background: var(--card-bg); width: 650px; max-width: 94vw; max-height: 85vh; border-radius: 14px; box-shadow: 0 10px 25px rgba(120,80,50,0.2); overflow: hidden; display: flex; flex-direction: column; }
+#insuranceView .modal-header { padding: 14px 18px; background: #7b5646; color: #f8ecda; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 #insuranceView .modal-header span[data-close] { cursor: pointer; }
 #insuranceView .modal-body { padding: 18px; overflow-y: auto; flex: 1; }
-#insuranceView .modal-footer { padding: 12px 18px; background: #fdfbf7; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }
+#insuranceView .modal-footer { padding: 12px 18px; background: #fcf4e8; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }
 
 #insuranceView input, #insuranceView select, #insuranceView textarea {
   border: 1px solid var(--border-color);
@@ -120,6 +120,6 @@
 #insuranceView input:focus, #insuranceView select:focus, #insuranceView textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(118,108,90,0.15);
+  box-shadow: 0 0 0 2px rgba(181,66,77,0.15);
 }
 #insuranceView textarea { min-height: 60px; resize: vertical; }

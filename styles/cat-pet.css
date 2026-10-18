@@ -1,0 +1,21 @@
+/* 新風格：圓圓的標題字體 + 貓咪動畫 */
+:root { --font-display: "Huninn", "Noto Sans TC", "Hiragino Sans", sans-serif; }
+.app-header-title, #stockView .header h1, #financeView h1, .modal-header h3, .stmt-head, .tips-widget-title { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.03em; }
+.app-header-title { font-weight: 400; font-size: 1.2rem; }
+
+.cat-layer { position: fixed; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); height: 140px; pointer-events: none; z-index: 880; overflow: hidden; }
+@media (max-width: 760px) { .cat-layer { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); } }
+.cat-layer .cat { position: absolute; left: 0; bottom: 0; width: 110px; display: none; will-change: transform; }
+.cat-layer .cat.on { display: block; }
+.cat-layer .cat svg { width: 100%; height: auto; display: block; overflow: visible; filter: drop-shadow(0 0 1px rgba(150,100,60,0.7)) drop-shadow(0 2px 2px rgba(150,100,60,0.2)); }
+.cat-layer .cat .hop { display: none; width: 84px; margin-left: 13px; }
+.cat-layer .cat .ballsvg { width: 84px; }
+.cat-layer .cat.rolling .axis { display: none; }
+.cat-layer .cat.rolling .hop { display: block; }
+.cat-layer .leg { transform-box: fill-box; transform-origin: 50% 0%; animation: catStep 0.42s ease-in-out infinite alternate; }
+.cat-layer .leg.b { animation-delay: -0.21s; }
+.cat-layer .tail { transform-box: fill-box; transform-origin: 0% 100%; animation: catWag 0.42s ease-in-out infinite alternate; }
+.cat-layer .bob { animation: catBob 0.21s ease-in-out infinite alternate; }
+@keyframes catStep { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+@keyframes catWag { from { transform: rotate(-12deg); } to { transform: rotate(14deg); } }
+@keyframes catBob { from { transform: translateY(0); } to { transform: translateY(-3px); } }

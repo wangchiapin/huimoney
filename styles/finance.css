@@ -1,25 +1,25 @@
     :root {
-      --bg-color: #f4f0e8;
-      --card-bg: #fdfbf7;
-      --border-color: #ddd5c4;
-      --text-main: #3c362e;
-      --text-muted: #93897a;
-      --primary: #766c5a;
-      --primary-hover: #5c5445;
-      --danger: #a8543d;
-      --selection-bg: rgba(118, 108, 90, 0.14);
-      --selection-border: #766c5a;
+      --bg-color: #f8ecda;
+      --card-bg: #fcf4e8;
+      --border-color: #ecd8bc;
+      --text-main: #5b4333;
+      --text-muted: #98806a;
+      --primary: #b5424d;
+      --primary-hover: #9a3640;
+      --danger: #b5424d;
+      --selection-bg: rgba(181,66,77, 0.14);
+      --selection-border: #b5424d;
 
-      --sec-bank: #eef0e6;
-      --sec-ins: #eaeef0;
-      --sec-stock: #f5eee0;
-      --sec-total-cost: #ddc4b3;
-      --sec-total-growth: #ece2c4;
-      --sec-total-val: #ddc4b3;
-      --sec-summary: #e9e4da;
-      --sec-usd: #ece7ea;
-      --sec-rate: #dde3dc;
-      --sec-ratio: #e6e9e2;
+      --sec-bank: #dbeed7;
+      --sec-ins: #d9e8f5;
+      --sec-stock: #f8e0c0;
+      --sec-total-cost: #f6cfa6;
+      --sec-total-growth: #f8e2a4;
+      --sec-total-val: #f6cfa6;
+      --sec-summary: #f1e2c9;
+      --sec-usd: #e6dbf3;
+      --sec-rate: #d4e9d3;
+      --sec-ratio: #e2eed9;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -60,7 +60,7 @@
     .btn-primary { background-color: var(--primary); color: #fff; border-color: var(--primary); }
     .btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
     .btn-outline { background-color: transparent; border-color: var(--border-color); color: var(--text-main); }
-    .btn-outline:hover { background-color: #ece7dc; }
+    .btn-outline:hover { background-color: #f1e2c9; }
     .btn-danger { background-color: var(--card-bg); color: var(--danger); border-color: var(--danger); }
     .btn-danger:hover { background-color: var(--danger); color: #fff; }
 
@@ -78,8 +78,8 @@
       position: relative;
     }
     .table-container::-webkit-scrollbar { height: 10px; width: 10px; }
-    .table-container::-webkit-scrollbar-track { background: #ece6d9; }
-    .table-container::-webkit-scrollbar-thumb { background: #c9bfa8; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-track { background: #f1e2c9; }
+    .table-container::-webkit-scrollbar-thumb { background: #c9bfa8; border-radius: 8px; }
     .table-container::-webkit-scrollbar-thumb:hover { background: #a89a7a; }
 
     /* ====== Task 4: 底部固定水平捲軸，黏在容器可視範圍下緣，不用捲到頁面最底部 ====== */
@@ -91,13 +91,13 @@
       height: 14px;
       overflow-x: auto;
       overflow-y: hidden;
-      background: #ece6d9;
+      background: #f1e2c9;
       border-top: 1px solid var(--border-color);
       z-index: 20;
     }
     .finance-bottom-scroll-wrapper::-webkit-scrollbar { height: 10px; }
-    .finance-bottom-scroll-wrapper::-webkit-scrollbar-track { background: #ece6d9; }
-    .finance-bottom-scroll-wrapper::-webkit-scrollbar-thumb { background: #c9bfa8; border-radius: 4px; }
+    .finance-bottom-scroll-wrapper::-webkit-scrollbar-track { background: #f1e2c9; }
+    .finance-bottom-scroll-wrapper::-webkit-scrollbar-thumb { background: #c9bfa8; border-radius: 8px; }
     .finance-bottom-scroll-wrapper::-webkit-scrollbar-thumb:hover { background: #a89a7a; }
     .finance-bottom-scroll-dummy { height: 1px; }
 
@@ -124,7 +124,7 @@
 
     th {
       font-weight: 500;
-      background-color: #ece6d9;
+      background-color: #f1e2c9;
       color: var(--text-main);
       position: sticky;
       top: 0;
@@ -156,7 +156,7 @@
       vertical-align: middle;
     }
 
-    th.row-label { z-index: 15; background-color: #ece6d9; }
+    th.row-label { z-index: 15; background-color: #f1e2c9; }
 
     /* 編輯儲存格時，該列的項目欄反白（只變背景，文字顏色不變），
        用 !important 蓋過各區塊(銀行/保險/股票...)各自的 row-label 底色規則 */
@@ -207,12 +207,12 @@
       outline: none;
       border-color: var(--primary);
       background: #fff;
-      box-shadow: 0 0 0 2px rgba(118,108,90,0.12);
+      box-shadow: 0 0 0 2px rgba(181,66,77,0.12);
     }
 
     .sec-header {
-      background-color: #4a4438 !important;
-      color: #f4f0e8 !important;
+      background-color: #7b5646 !important;
+      color: #f8ecda !important;
       font-weight: 500;
       text-align: center !important;
       vertical-align: middle;
@@ -230,7 +230,7 @@
 
     tr.highlight-red td { background-color: #efdfd4; color: #6e3d2c; font-weight: 600; }
     tr.highlight-red td.row-label { background-color: var(--sec-total-cost); }
-    tr.highlight-yellow td { background-color: #f4ecd4; font-weight: 600; }
+    tr.highlight-yellow td { background-color: #fbebbd; font-weight: 600; }
     tr.highlight-yellow td.row-label { background-color: var(--sec-total-growth); }
 
     tr.summary-row td.row-label { background-color: var(--sec-summary); font-weight: 600; }
@@ -261,7 +261,7 @@
       right: -2px;
       width: 6px;
       height: 6px;
-      background: #a8543d;
+      background: #b5424d;
       border-radius: 50%;
     }
 
@@ -273,8 +273,8 @@
       left: 0;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 4px;
-      box-shadow: 0 4px 14px rgba(60,54,46,0.18);
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(120,80,50,0.18);
       z-index: 1500;
       min-width: 210px;
       overflow: hidden;
@@ -291,7 +291,7 @@
       cursor: pointer;
       font-family: inherit;
     }
-    .settings-menu-item:hover { background: #ece7dc; }
+    .settings-menu-item:hover { background: #f1e2c9; }
     .settings-menu-danger { color: var(--danger); }
     .settings-menu-danger:hover { background: var(--danger); color: #fff; }
     .settings-menu-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
@@ -369,7 +369,7 @@
     }
 
     .del-btn {
-      color: #b3a998;
+      color: #b9a28c;
       cursor: pointer;
       font-size: 13px;
       transition: color 0.15s;
@@ -378,7 +378,7 @@
 
     .drag-handle {
       cursor: grab;
-      color: #b3a998;
+      color: #b9a28c;
       font-size: 14px;
       padding: 2px 4px;
       border-radius: 2px;

@@ -412,10 +412,10 @@ function openInsuranceArchiveManager() {
 
   const modal = document.createElement('div');
   modal.id = 'insuranceArchiveModal';
-  modal.style.cssText = 'position:fixed; inset:0; background:rgba(60,54,46,0.35); z-index:3000; display:flex; align-items:center; justify-content:center;';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(120,80,50,0.35); z-index:3000; display:flex; align-items:center; justify-content:center;';
   modal.innerHTML =
-    '<div style="background:var(--card-bg); border-radius:6px; width:440px; max-width:90vw; max-height:70vh; overflow:auto; box-shadow:0 8px 30px rgba(0,0,0,0.25);">' +
-      '<div style="background:#4a4438; color:#f4f0e8; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:500; position:sticky; top:0;">' +
+    '<div style="background:var(--card-bg); border-radius:10px; width:440px; max-width:90vw; max-height:70vh; overflow:auto; box-shadow:0 8px 30px rgba(120,80,50,0.25);">' +
+      '<div style="background:#7b5646; color:#f8ecda; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:500; position:sticky; top:0;">' +
         '<span>🗄️ 保險封存管理</span><span style="cursor:pointer;" onclick="closeInsuranceArchiveManager()">✖</span>' +
       '</div>' +
       '<div style="padding:8px 16px;">' + rowsHtml + '</div>' +

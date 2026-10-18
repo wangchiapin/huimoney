@@ -11,9 +11,9 @@
       thead.innerHTML = `
         <tr>
           <th style="width: 13%;">發放年度</th>
-          <th style="width: 20%; color:#5c5445;">非持股股利總和 ($)</th>
-          <th style="width: 20%; color:#766c5a;">目前持股股利 (現金股利) ($)</th>
-          <th style="width: 22%; color:#9c7c52; font-size:0.9rem;">年度全體總額 ($) 🌟</th>
+          <th style="width: 20%; color:#6b4c3a;">非持股股利總和 ($)</th>
+          <th style="width: 20%; color:#8a6a55;">目前持股股利 (現金股利) ($)</th>
+          <th style="width: 22%; color:#a86f2f; font-size:0.9rem;">年度全體總額 ($) 🌟</th>
           <th style="width: 17%;">全體歷年佔比</th>
           <th style="width: 8%;">明細</th>
         </tr>
@@ -31,13 +31,13 @@
         return `
           <tr>
             <td style="font-weight:700; font-size:0.92rem;">${esc(item.displayYear)}</td>
-            <td class="font-mono" style="color:#5c5445;">$${formatNum(item.pastAmount, 0)}</td>
-            <td class="font-mono font-bold" style="color:#766c5a;">$${formatNum(item.currentAmount, 0)}</td>
-            <td class="font-mono font-bold" style="font-size:1.05rem; color:#9c7c52; background:#f4ecd4;">
+            <td class="font-mono" style="color:#6b4c3a;">$${formatNum(item.pastAmount, 0)}</td>
+            <td class="font-mono font-bold" style="color:#8a6a55;">$${formatNum(item.currentAmount, 0)}</td>
+            <td class="font-mono font-bold" style="font-size:1.05rem; color:#a86f2f; background:#fbebbd;">
               $${formatNum(item.totalAmount, 0)}
             </td>
             <td>
-              <span class="font-mono font-bold" style="font-size:0.85rem; color:#93897a;">${ratio}%</span>
+              <span class="font-mono font-bold" style="font-size:0.85rem; color:#98806a;">${ratio}%</span>
             </td>
             <td>
               <button class="btn" style="padding:3px 8px; font-size:0.78rem;" onclick="openYearlyDivDetailModal('${item.rawKey}', '${item.displayYear}')">🔍 明細</button>
@@ -91,7 +91,7 @@
           labels,
           datasets: [
             { label: '非持股股利總和', data: pastData, borderColor: '#5c5445', backgroundColor: 'rgba(92,84,69,0.08)', tension: 0.25, pointRadius: 3 },
-            { label: '目前持股股利', data: currentData, borderColor: '#766c5a', backgroundColor: 'rgba(118,108,90,0.08)', tension: 0.25, pointRadius: 3 },
+            { label: '目前持股股利', data: currentData, borderColor: '#766c5a', backgroundColor: 'rgba(181,66,77,0.08)', tension: 0.25, pointRadius: 3 },
             { label: '年度全體總額', data: totalData, borderColor: '#9c7c52', backgroundColor: 'rgba(156,124,82,0.1)', tension: 0.25, pointRadius: 3, borderWidth: 2.5 }
           ]
         },
@@ -140,8 +140,8 @@
 
       thead.innerHTML = `
         <tr>
-          <th style="width: 140px; background:#ece6d9;">項目 / 股票</th>
-          ${uniqueStocks.map(us => `<th style="width: 120px;">${esc(us.name)} <span style="font-size:0.75rem; color:#93897a;">${us.code ? '(' + esc(us.code) + ')' : ''}</span></th>`).join('')}
+          <th style="width: 140px; background:#f1e2c9;">項目 / 股票</th>
+          ${uniqueStocks.map(us => `<th style="width: 120px;">${esc(us.name)} <span style="font-size:0.75rem; color:#98806a;">${us.code ? '(' + esc(us.code) + ')' : ''}</span></th>`).join('')}
         </tr>
       `;
 
@@ -205,15 +205,15 @@
           } else if (row.type === 'calc_yield') {
             const c = Number(est.expCash) || 0;
             const y = price > 0 ? (c / price) * 100 : 0;
-            return `<td class="font-mono font-bold" style="color:#766c5a;">${y.toFixed(2)}%</td>`;
+            return `<td class="font-mono font-bold" style="color:#8a6a55;">${y.toFixed(2)}%</td>`;
           } else if (row.type === 'calc_tot_cash') {
             const c = Number(est.expCash) || 0;
             const totC = Math.round(c * shares);
-            return `<td class="font-mono font-bold" style="color:#9c7c52;">$${formatNum(totC, 0)}</td>`;
+            return `<td class="font-mono font-bold" style="color:#a86f2f;">$${formatNum(totC, 0)}</td>`;
           } else if (row.type === 'calc_tot_stock') {
             const s = Number(est.expStock) || 0;
             const totS = Math.round(s * shares);
-            return `<td class="font-mono font-bold" style="color:#5c5445;">${formatNum(totS, 0)} 股</td>`;
+            return `<td class="font-mono font-bold" style="color:#6b4c3a;">${formatNum(totS, 0)} 股</td>`;
           } else if (row.type === 'calc_ref_price') {
             const c = Number(est.expCash) || 0;
             const s = Number(est.expStock) || 0;
@@ -229,7 +229,7 @@
 
         return `
           <tr>
-            <td style="font-weight:700; background:#fdfbf7; text-align:left; padding-left:12px;">${esc(row.label)}</td>
+            <td style="font-weight:700; background:#fcf4e8; text-align:left; padding-left:12px;">${esc(row.label)}</td>
             ${cellsHtml}
           </tr>
         `;
