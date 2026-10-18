@@ -55,13 +55,26 @@
       return n;
     }
 
-    function renameCustomAccount(event, oldName) {
-      event.stopPropagation();
-      if (oldName === '美股複委託') { alert('「美股複委託」這個名字程式用來判斷美股，不能改名。'); return; }
-      const input = prompt(`把證券帳戶【${oldName}】改名成：`, oldName);
-      if (input === null) return;
-      const name = input.trim();
-      if (!name || name === oldName) return;
+    function openRenameAccountModal() {
+      const list = customAccounts.slice();
+      if (!list.length) { alert('目前沒有可以改名的證券帳戶。（「美股複委託」不能改名）'); return; }
+      const sel = document.getElementById('renameAccountOld');
+      sel.innerHTML = list.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+      if (list.includes(currentFilter)) sel.value = currentFilter;
+      document.getElementById('renameAccountNew').value = '';
+      document.getElementById('renameAccountModal').classList.add('open');
+    }
+
+    function closeRenameAccountModal() {
+      document.getElementById('renameAccountModal').classList.remove('open');
+    }
+
+    function submitRenameAccount() {
+      const oldName = document.getElementById('renameAccountOld').value;
+      const name = document.getElementById('renameAccountNew').value.trim();
+      if (!oldName) return;
+      if (!name) { alert('請填新名字。'); return; }
+      if (name === oldName) { alert('新名字跟原本一樣，沒有要改。'); return; }
       if (name === '美股複委託' || name.includes('+')) { alert('這個名字不能用（不能是「美股複委託」，也不能有「+」）。'); return; }
       if (getAllAccounts().includes(name)) {
         alert(`已經有名叫【${name}】的證券帳戶。為了避免兩個帳戶的資料混在一起，不會自動合併，請換一個名字。`);
@@ -72,6 +85,7 @@
       saveToStorage();
       renderTabs();
       renderTable();
+      closeRenameAccountModal();
       if (typeof showToast === 'function') showToast(`已把【${oldName}】改名成【${name}】（持股 ${n.stocks} 筆、買進 ${n.buys} 筆）`, 'success');
     }
 
