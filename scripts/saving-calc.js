@@ -14,7 +14,7 @@ function savingNewCard() {
            yieldMode: 'pct', yieldPct: 5, divPerShare: 0, priceGrowth: 0, divGrowth: 0 };
 }
 function savingDefaultState() {
-  return { years: 10, reinvest: true, feePct: 0.1425, view: 'total', cards: [savingNewCard(), savingNewCard(), savingNewCard()] };
+  return { years: 10, reinvest: true, feePct: 0.1425, view: 'total', goalMonthly: 0, cards: [savingNewCard(), savingNewCard(), savingNewCard()] };
 }
 function savingLoad() {
   let s = null;
@@ -24,7 +24,7 @@ function savingLoad() {
   const n = v => (isFinite(Number(v)) ? Number(v) : 0);
   return {
     years: Math.min(60, Math.max(1, Math.round(n(s.years) || d.years))),
-    reinvest: s.reinvest !== false, feePct: Math.max(0, n(s.feePct)), view: 'total',
+    reinvest: s.reinvest !== false, feePct: Math.max(0, n(s.feePct)), view: 'total', goalMonthly: Math.max(0, n(s.goalMonthly)),
     cards: s.cards.slice(0, 30).map(c => Object.assign(savingNewCard(), c || {}))
   };
 }
@@ -111,6 +111,34 @@ function savingTotals(cards, g) {
   return { per, total };
 }
 
+
+/* 目標反推：想每月領 target 元股息 */
+function savingGoal(cards, g, target) {
+  const valid = cards.filter(c => (Number(c.price) || 0) > 0);
+  if (!valid.length) return { noStocks: true };
+  const monthlyOf = tot => tot.divYear / 12;
+  // 1) 以現在的設定，要幾年才達到（最多算 60 年）
+  const long = savingTotals(cards, Object.assign({}, g, { years: 60 })).total;
+  const hit = long.find(t => monthlyOf(t) >= target);
+  const yearsNeeded = hit ? hit.year : null;
+  // 2) 在 g.years 年內達到，每月總共要投入多少（多出來的錢依「現在每月投入」比例分配；都是 0 就平均分給每一檔）
+  const base = valid.reduce((s, c) => s + (Number(c.monthly) || 0), 0);
+  const withExtra = e => cards.map(c => {
+    if ((Number(c.price) || 0) <= 0) return c;
+    const w = base > 0 ? (Number(c.monthly) || 0) / base : 1 / valid.length;
+    return Object.assign({}, c, { monthly: (Number(c.monthly) || 0) + e * w });
+  });
+  const reach = e => { const t = savingTotals(withExtra(e), g).total; return monthlyOf(t[t.length - 1]); };
+  let extra = 0, impossible = false;
+  if (reach(0) < target) {
+    let lo = 0, hi = 1000;
+    while (reach(hi) < target && hi < 1e9) hi *= 2;
+    if (reach(hi) < target) impossible = true;
+    else { for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (reach(mid) >= target) hi = mid; else lo = mid; } extra = hi; }
+  }
+  return { noStocks: false, yearsNeeded, baseMonthly: base, extra, impossible, years: g.years };
+}
+
 /* ====== 畫面 ====== */
 const savingFmt = v => Math.round(Number(v) || 0).toLocaleString('en-US');
 const savingFmt1 = v => (Number(v) || 0).toLocaleString('en-US', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -178,6 +206,7 @@ function savingRenderAll() {
   document.getElementById('savingYears').value = savingCalc.years;
   document.getElementById('savingFee').value = savingCalc.feePct;
   document.getElementById('savingReinvest').checked = !!savingCalc.reinvest;
+  document.getElementById('savingGoal').value = savingCalc.goalMonthly || '';
   savingRecalc();
 }
 
@@ -211,8 +240,54 @@ function savingRecalc() {
     <thead><tr style="text-align:right; border-bottom:2px solid #e0d8c8;"><th style="text-align:left;">第幾年</th>${showSh ? '<th>年底股數</th><th>年底股價</th>' : ''}<th>市值</th><th>投入本金</th><th>當年股息</th><th>每月約</th><th>累積股息</th></tr></thead><tbody>`
     + rows.map(r => `<tr style="text-align:right; border-bottom:1px solid #eee6d8;"><td style="text-align:left;">第 ${r.year} 年</td>${showSh ? `<td>${savingFmt(r.shares)}</td><td>${savingFmt1(r.price)}</td>` : ''}<td>${savingFmt(r.value)}</td><td>${savingFmt(r.invested)}</td><td>${savingFmt(r.divYear)}</td><td>${savingFmt(r.divYear / 12)}</td><td>${savingFmt(r.cumDiv)}</td></tr>`).join('')
     + '</tbody></table>';
+  savingDrawChart(rows);
+  savingRenderGoal();
   savingSave();
 }
+
+
+let savingChart = null;
+function savingDrawChart(rows) {
+  const cv = document.getElementById('savingChartCanvas');
+  if (!cv || typeof Chart === 'undefined') return;
+  const labels = rows.map(r => '第 ' + r.year + ' 年');
+  const sets = [
+    { label: '市值', data: rows.map(r => Math.round(r.value)), borderColor: '#2f6f5e', backgroundColor: '#2f6f5e', tension: 0.25, pointRadius: 2 },
+    { label: '投入本金', data: rows.map(r => Math.round(r.invested)), borderColor: '#93897a', backgroundColor: '#93897a', borderDash: [6, 4], tension: 0.25, pointRadius: 2 },
+    { label: '累積股息', data: rows.map(r => Math.round(r.cumDiv)), borderColor: '#c08a2e', backgroundColor: '#c08a2e', tension: 0.25, pointRadius: 2 }
+  ];
+  if (savingChart) {
+    savingChart.data.labels = labels;
+    savingChart.data.datasets.forEach((d, i) => { d.data = sets[i].data; });
+    savingChart.update();
+    return;
+  }
+  savingChart = new Chart(cv.getContext('2d'), {
+    type: 'line', data: { labels, datasets: sets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => c.dataset.label + '：NT$ ' + Number(c.parsed.y).toLocaleString('en-US') } } },
+      scales: { y: { ticks: { callback: v => Number(v).toLocaleString('en-US') } } }
+    }
+  });
+}
+
+function savingRenderGoal() {
+  const box = document.getElementById('savingGoalResult');
+  if (!box) return;
+  const g = savingCalc, t = Number(g.goalMonthly) || 0;
+  if (t <= 0) { box.innerHTML = '<span style="color:#93897a;">填一個目標，就會算出要等幾年、或每月要多投入多少。</span>'; return; }
+  const r = savingGoal(g.cards, g, t);
+  if (r.noStocks) { box.innerHTML = '<span style="color:#b6533c;">請先在上面至少填一檔有股價的股票。</span>'; return; }
+  const lines = [];
+  lines.push(r.yearsNeeded ? `照目前的設定，<b>第 ${r.yearsNeeded} 年</b>每月股息可以達到 NT$ ${savingFmt(t)}。` : `照目前的設定，60 年內每月股息都達不到 NT$ ${savingFmt(t)}。`);
+  if (r.impossible) lines.push(`想在 ${r.years} 年內達到，不管每月投入多少都算不出來（可能殖利率是 0）。`);
+  else if (r.extra <= 0) lines.push(`${r.years} 年內，照目前的投入就已經可以達到，不用多投入。`);
+  else lines.push(`想在 <b>${r.years} 年</b>內達到，每月總共要投入約 <b>NT$ ${savingFmt(r.baseMonthly + r.extra)}</b>（目前 ${savingFmt(r.baseMonthly)}，要多投入 ${savingFmt(r.extra)}）。`);
+  box.innerHTML = lines.join('<br>');
+}
+function savingSetGoal(v) { savingCalc.goalMonthly = Math.max(0, Number(v) || 0); savingRenderGoal(); savingSave(); }
 
 function savingSet(i, field, val, isText) {
   const c = savingCalc.cards[i]; if (!c) return;
