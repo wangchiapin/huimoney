@@ -537,6 +537,15 @@
           const name = real ? real.name : hd.name;
           if (h && Math.abs(app - want) < 0.001) {
             stmtItems.push(stmtItem(Object.assign({}, { sid: it.sid, src: it.src }, { type: 'info', group: 'skip', checked: false, title: `庫存 ${name} ${stmtFmt(want)} 股`, detail: '跟 App 股數一樣' })));
+          } else if (!h && !real) {
+            // App 完全沒有這檔（持股和這次匯入的買進都沒有）→ 可以直接新增持股，成本先填 0
+            if (want > 0) {
+              stmtItems.push(stmtItem(Object.assign({}, { sid: it.sid, src: it.src, failed: it.failed }, {
+                type: 'holdingNew', group: 'add', account: it.account,
+                data: { name: stmtAppName(hd.name, hd.code, it.account), code: hd.code || '', shares: want, price: Number(hd.closePrice) || 0 },
+                edit: [['name', '名稱', 'text'], ['code', '代號', 'text'], ['shares', '股數']]
+              })));
+            }
           } else {
             stmtItems.push(stmtItem(Object.assign({}, { sid: it.sid, src: it.src, failed: it.failed }, {
               type: 'holdingFix', group: 'review', account: it.account, choice: 'statement',
@@ -576,7 +585,7 @@
       // 分組：可能已輸入 → 略過；有問題 → 需要你看
       stmtItems.forEach(it => {
         if (it.type === 'info') return;
-        if (['sell', 'stockDiv', 'cashDiv', 'holdingFix', 'lentShares'].includes(it.type) && stmtIsGone(it.data.name)) {
+        if (['sell', 'stockDiv', 'cashDiv', 'holdingFix', 'holdingNew', 'lentShares'].includes(it.type) && stmtIsGone(it.data.name)) {
           it.group = 'skip'; it.checked = false; it.note = '設定成「已經沒有這檔，不用問」'; return;
         }
         if (it.dup) { it.group = 'skip'; it.checked = false; it.note = '可能已經輸入過了'; return; }
@@ -586,6 +595,7 @@
         if (it.type === 'stockDiv' && it.noHolding) { it.group = 'review'; it.checked = false; it.note = '持股裡找不到這檔'; }
         if (it.type === 'cashDiv' && !it.holdingId) { it.group = 'review'; it.checked = false; it.note = it.many ? '好幾個帳戶都有這檔，請在上面設定名稱對應' : '持股裡找不到這檔，請在上面設定名稱對應'; }
         if (it.type === 'holdingFix' && it.noHolding) { it.checked = false; it.note = 'App 持股裡沒有這檔'; }
+        if (it.type === 'holdingNew' && !it.account) { it.group = 'review'; it.checked = false; it.note = '請先在上面設定這份對帳單要寫到哪個證券帳戶'; }
         if (it.type === 'balance') {
           const t = stmtBankTarget(it.res, it.acc);
           if (!t) { it.group = 'review'; it.checked = false; it.note = '請在上面設定要寫到財務總覽的哪一個項目'; }
@@ -884,6 +894,10 @@
               + (sum != null ? `（${same.length} 個帳戶加總：${same.map(x => stmtEsc(String(x.acc.accountNo).slice(-4)) + ' $' + stmtFmt(x.data.value, 0)).join(' ＋ ')}）` : '') : '還沒設定對應'
           };
         }
+        case 'holdingNew': return {
+          tag: '新增持股', title: `${stmtEsc(d.name)}${d.code ? `（${stmtEsc(d.code)}）` : ''}：對帳單 ${stmtFmt(d.shares)} 股，App 沒有這檔`,
+          detail: `${stmtEsc(it.account)}・會新增這檔持股${typeof sbGuessCategory === 'function' ? `（${stmtEsc(sbGuessCategory(it.account, d.code))}）` : ''}・成本先填 0，請之後到持股表自己補`
+        };
         case 'holdingFix': return {
           tag: '庫存核對', title: `${stmtEsc(d.name)}：對帳單 ${stmtFmt(d.shares)} 股${d.lent ? `（庫存 ${stmtFmt(d.stmtShares)}＋出借 ${stmtFmt(d.lent)}）` : ''}，App ${stmtFmt(d.appShares)} 股`,
           detail: `${stmtEsc(it.account)}・App 的股數已經算進這次匯入的買賣`
@@ -926,7 +940,7 @@
     const STMT_KINDS = ['buy', 'sell', 'daytrade', 'stockDiv', 'cashDiv', 'lendIncome', 'lentShares', 'holding', 'yf', 'balance', 'bankref', 'other'];
     const STMT_KIND_LABEL = { buy: '買進', sell: '賣出', daytrade: '當沖', stockDiv: '配股', cashDiv: '現金股利', lendIncome: '借卷收入', lentShares: '出借張數', holding: '庫存', yf: '媽的永豐', balance: '銀行餘額', bankref: '銀行入帳核對', other: '其他' };
     function stmtKindOf(it) {
-      if (it.type === 'holdingFix') return 'holding';
+      if (it.type === 'holdingFix' || it.type === 'holdingNew') return 'holding';
       if (it.type === 'yfBuy' || it.type === 'yfAppCost' || it.yf) return 'yf';
       if (it.type !== 'info') return STMT_KINDS.includes(it.type) ? it.type : 'other';
       const t = String(it.title || '');
@@ -1102,6 +1116,19 @@
             const row = stockLending.find(r => stmtNorm(r.name) === stmtNorm(d.name));
             if (row) row.lentShares = v; else stockLending.push({ id: Date.now() + Math.floor(Math.random() * 100000), name: d.name, lentShares: v, cost: 0 });
             bump('出借張數');
+          } else if (it.type === 'holdingNew') {
+            if (stmtMatchHolding(d.name, d.code, it.account).h) { problems.push(`${d.name} 持股裡已經有這檔，沒有重複新增`); return; }
+            if (!it.account) { problems.push(`新增持股 ${d.name} 沒有對應的證券帳戶`); return; }
+            const nh = {
+              id: Date.now() + Math.floor(Math.random() * 100000), name: String(d.name).trim(), code: String(d.code || '').trim(),
+              category: sbGuessCategory(it.account, d.code), account: it.account,
+              shares: Number(d.shares) || 0, totalCost: 0, currentPrice: Number(d.price) || 0, marketVal: 0,
+              cashDividends: 0, stockShares: 0, dividendHistory: [], lentShares: 0, lots: [], createdByStmt: it.sid
+            };
+            nh.marketVal = stmtR(nh.currentPrice * nh.shares);
+            sbEnsureLots(nh);
+            stocks.unshift(nh);
+            bump('新增持股');
           } else if (it.type === 'holdingFix') {
             if (it.choice !== 'statement') return;
             const h = stmtMatchHolding(d.name, d.code, it.account).h;
