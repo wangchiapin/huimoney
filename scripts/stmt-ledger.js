@@ -7,18 +7,18 @@
    規則：
    - 每一筆銀行明細：存入＝收入、提出＝支出
    - 先和「手動記的帳」比對：金額一樣、日期差 5 天內、一對一（先配日期最近的）
-       ‧ 對上了 → 保留你手動寫的項目名稱，只標記「✓ 已對帳」（放在「更新」區，不會新增）
+       ‧ 對上了 → 保留你手動寫的項目名稱，只標記「✓ 已和銀行核對」（放在「更新」區，不會新增）
        ‧ 沒對上 → 放在「新增」區，分類猜好、你可以改，勾了才會記進去
    - 提出款項比對時：付款方式是「現金」「信用卡」的不比對（那不是直接從銀行出去的錢）；
        「繳卡費」那一筆只和分類「卡費」的手動紀錄比對
    - 股票：交割款（買進＝支出、賣出入帳＝收入，分類「股票交割」）、現金股息、權益息 → 股利、借券費 → 借券收入。
        股票的已實現損益完全不進記帳。
-   - 兩個自己的帳戶之間互轉（同金額、差 1 天內、不同帳戶）→ 放在「需要你看」，預設不記
+   - 兩個自己的帳戶之間互轉（同金額、差 1 天內、不同帳戶）→ 放在「請你確認」，預設不記
    - 同一行明細不會記兩次（每行有識別碼 stmt.key）；整份已匯入的對帳單本來就整份略過
    - 外幣帳戶的明細不列入
    - 信用卡帳單（國泰世華、台北富邦）：每一筆消費和手動記的「信用卡」支出比對（金額一樣、日期差 5 天內、一對一）
-       ‧ 對上了 → 標記「✓ 已對帳」；沒對上 → 新增一筆支出，付款方式是你選的那張卡（選過會記住）
-       ‧ 繳款、零元項目（年費減免）不記；退款放「需要你看」
+       ‧ 對上了 → 標記「✓ 已和銀行核對」；沒對上 → 新增一筆支出，付款方式是你選的那張卡（選過會記住）
+       ‧ 繳款、零元項目（年費減免）不記；退款放「請你確認」
    需要 ledger.js、stmt-import.js
    ==================================================================== */
 
@@ -99,7 +99,7 @@ function stmtLgBuildItems(results, imported) {
   });
   if (!txs.length && !foreign) return;
 
-  // 1. 已經記過的（重新處理時）
+  // 1. 已經記過的（再讀一次時）
   txs.forEach(x => { x.done = lgStmtKeyUsed(x.key); });
 
   // 2. 一對一配對：日期最近的先配
@@ -159,7 +159,7 @@ function stmtLgBuildItems(results, imported) {
       it.note = '請選這筆是哪一張信用卡刷的（選過會記住），再勾起來。';
     } else if (!x.known) {
       it.group = 'review'; it.checked = false;
-      it.note = '看不出這是哪一類（還沒有符合的關鍵字）。請選分類後勾起來；可以按「記住關鍵字」，下次自動認。';
+      it.note = '看不出這是哪一類（還沒有符合的關鍵字）。請選分類後勾起來；可以按「以後看到這個字，自動分到這一類」，下次自動認。';
     } else {
       it.group = 'add'; it.checked = true;
     }
@@ -253,7 +253,7 @@ function stmtLgDescribe(it) {
     const mi = it.matchInfo;
     return {
       tag: '記帳', title,
-      detail: `✓ 和你手動記的「${stmtEsc(mi.item)}」（${stmtEsc(mi.date)}、${stmtEsc(stmtLgCatName(mi.kind, mi.category))}）對上了${mi.days ? `，日期差 ${mi.days} 天` : ''}。只標記「已對帳」，不會新增、項目名稱保留你寫的。`,
+      detail: `✓ 和你手動記的「${stmtEsc(mi.item)}」（${stmtEsc(mi.date)}、${stmtEsc(stmtLgCatName(mi.kind, mi.category))}）對上了${mi.days ? `，日期差 ${mi.days} 天` : ''}。只標記「已和銀行核對」，不會新增、項目名稱保留你寫的。`,
       amount: d.amount
     };
   }
@@ -287,7 +287,7 @@ function stmtLgExtraHtml(it) {
         </select>
       </label>
       <label>項目 <input type="text" value="${stmtEsc(d.item)}" onchange="stmtEditField(${it.id}, 'item', this.value, 'text')" /></label>
-      <label>記住關鍵字 <input type="text" id="stmtKw${it.id}" value="${stmtEsc(stmtLgKwGuess(d.desc))}" placeholder="例如：配息" /></label>
+      <label>以後看到這個字，自動分到這一類 <input type="text" id="stmtKw${it.id}" value="${stmtEsc(stmtLgKwGuess(d.desc))}" placeholder="例如：配息" /></label>
       <button type="button" class="stmt-edit-btn" onclick="stmtLgTeach(${it.id})">以後看到這個字，都記成「${stmtEsc(stmtLgCatName(d.kind, d.category))}」</button>
     </div>`;
 }
@@ -311,7 +311,7 @@ function stmtLgApply(it, bump, problems) {
     const target = list.find(e => e.id === it.matchId);
     if (!target) { problems.push(`${d.item}：找不到要對帳的那筆手動紀錄（可能已經被刪掉）`); return; }
     if (d.kind === 'income') lgUpdateIncome(target.id, { stmt: link }); else lgUpdateExpense(target.id, { stmt: link });
-    bump('記帳：標記已對帳');
+    bump('記帳：標記已和銀行核對');
     return;
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) { problems.push(`${d.item}：日期格式不對`); return; }
@@ -363,7 +363,7 @@ function stmtLgDelKw(i) {
   list.splice(i, 1);
   stmtAfterSetting();
 }
-// 「管理所有記住的設定」裡的一段
+// 「我學會的設定」裡的一段
 function stmtLgManageRows() {
   const cardRows = Object.keys(stmtLgCardPayMap()).map(k => {
     const [src, last4] = k.split('|');

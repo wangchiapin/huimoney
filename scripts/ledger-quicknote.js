@@ -1,5 +1,5 @@
 /* ====================================================================
-   📝 隨手記：想到什麼先打一行，之後解析成待確認的支出，確認後才加入記帳
+   📝 隨手記：想到什麼先打一行，之後解析成自動收到的對帳單的支出，確認後才加入記帳
    格式例如：0913 早餐 500 午餐300 晚餐600（日期可寫 0913、20260913、2026-09-13、民國115年9月13日）
    - 沒有日期的行不會亂猜，原樣留在文字框裡讓你自己修改
    - 草稿存在 lg.quickNoteDraft，會跟著雲端同步
@@ -112,7 +112,7 @@ function lgQNRenderOut() {
   if (lgQN.msg) html += `<div class="lg-qn-msg">✅ ${lgEsc(lgQN.msg)}</div>`;
   if (p && p.candidates.length) {
     const bad = p.candidates.filter(lgQNIncomplete).length;
-    html += `<div class="lg-label" style="margin-top:14px">待確認新增（${p.candidates.length} 筆）</div>`;
+    html += `<div class="lg-label" style="margin-top:14px">自動收到的對帳單新增（${p.candidates.length} 筆）</div>`;
     html += p.candidates.map(c => `
       <div class="lg-qn-card ${lgQNIncomplete(c) ? 'bad' : ''}" data-id="${lgEsc(c.tempId)}">
         <div class="lg-qn-row">

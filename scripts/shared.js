@@ -1,5 +1,5 @@
     /* ====== Firebase 雲端同步設定（huimoney：目前不接上） ======
-       程式架構跟 All-MoneyBook 一樣保留（財務、股票、保險、資產總覽每月紀錄、📬 待確認），
+       程式架構跟 All-MoneyBook 一樣保留（財務、股票、保險、全部資產一覽每月紀錄、📬 自動收到的對帳單），
        但設定先留空，index.html 也沒有載入 Firebase 程式庫，所以不會連到任何雲端，按「登入」只會跳提示。
        以後要接上：1) 在下面填好 Firebase 專案設定；2) 打開 index.html 裡被註解掉的三行 Firebase 程式庫；
        3) 把 handleLoginClick() 裡的提示換成原本的登入流程（All-MoneyBook 的寫法）。 */

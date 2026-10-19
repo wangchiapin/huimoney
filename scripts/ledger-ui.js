@@ -153,7 +153,7 @@ function lgPayTagHtml(it) {
   const t = lgPayType(it.payMethod);
   return ` <span class="lg-tag pay">${t === 'card' ? '💳' : (t === 'cash' ? '💵' : '🏦')} ${lgEsc(lgPayName(it.payMethod))}</span>`;
 }
-function lgStmtTagHtml(it) { return it.stmt ? ' <span class="lg-tag ok" title="已和銀行對帳單對上">✓ 已對帳</span>' : ''; }
+function lgStmtTagHtml(it) { return it.stmt ? ' <span class="lg-tag ok" title="已和銀行對帳單對上">✓ 已和銀行核對</span>' : ''; }
 function lgFundTagHtml(it, isExp) {
   if (!isExp) return lgStmtTagHtml(it);
   const base = lgPayTagHtml(it) + lgStmtTagHtml(it);

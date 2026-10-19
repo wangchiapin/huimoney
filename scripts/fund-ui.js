@@ -3,7 +3,7 @@
    - 算帳在 ledger.js 的 lgFundSummary / lgFundEntries
    - 老婆的匯入＝記帳裡分類「共同基金」的支出（同一筆，這裡改、那邊跟著變）
    - 老公的匯入、支出、結算、期初餘額：只記在這裡（fundTxns）
-   - 這個分頁不會出現在財務總覽／資產總覽
+   - 這個分頁不會出現在財務總覽／全部資產一覽
    需要 ledger.js、ledger-ui.js（共用彈出視窗與樣式）
    ==================================================================== */
 
@@ -38,7 +38,7 @@ function renderFund() {
         <button type="button" class="lg-month-btn" onclick="fdPickMonth()"><b>${tw}</b><small>${greg}</small></button>
         <button type="button" class="lg-icon-btn" onclick="fdShiftView(1)" aria-label="下個月">›</button>
       </div>
-      <div class="lg-fund-title">🏦 共同基金 <small>（虛擬帳戶，不算進財務總覽／資產總覽）</small></div>
+      <div class="lg-fund-title">🏦 共同基金 <small>（虛擬帳戶，不算進財務總覽／全部資產一覽）</small></div>
     </div>
     <div class="lg-kpis">
       <div class="lg-kpi"><div class="lg-kpi-label">帳戶實際餘額</div><div class="lg-kpi-value">$${lgFmt(sm.balance)}</div></div>
