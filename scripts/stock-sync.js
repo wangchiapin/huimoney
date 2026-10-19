@@ -4,8 +4,18 @@
    index.html 要放在 stock.js 後面載入。 */
 
     /* ====== Firebase 雲端同步 ====== */
+    /* 退休試算設定也放在這份雲端文件裡（settings.retirement）。
+       規則：本機改過（touched）才上傳，沒改過的範例數字不上傳；按「還原範例」時上傳 null 把雲端那份清掉。
+       沒有退休試算這個分頁的網站（retirementSettings 不存在）完全不受影響。 */
+    let retirementClearPending = false;
+    function retirementForCloud() {
+      if (typeof retirementSettings === 'undefined') return undefined;
+      if (retirementSettings.touched) return JSON.parse(JSON.stringify(retirementSettings));
+      return retirementClearPending ? null : undefined;
+    }
+
     function gatherAllData() {
-      return {
+      const data = {
         stocks, pastColumns, customAccounts, stockSales, stockBuys, stmtSettings, stmtImported, salesHistory, stockLending,
         lendingIncomeRows, lendingIncomeManualYearly, dcaRows,
         dividendEstimates, exRightsInfo,
@@ -13,6 +23,18 @@
         usdRate: (typeof getUsdRate === 'function') ? getUsdRate() : 29,
         updatedAt: new Date().toISOString()
       };
+      const ret = retirementForCloud();
+      if (ret !== undefined) data.settings = { retirement: ret };   // Firestore 不收 undefined，所以有值才放
+      return data;
+    }
+
+    // 把雲端的退休設定套到本機（直接寫，不經過 saveRetirementSettings，避免又觸發上傳）
+    function applyCloudRetirement(raw) {
+      if (typeof retirementSettings === 'undefined' || typeof retirementSanitize !== 'function') return;
+      if (!raw || typeof raw !== 'object') return;
+      retirementSettings = retirementSanitize(raw);
+      try { localStorage.setItem(RETIREMENT_STORAGE_KEY, JSON.stringify(retirementSettings)); } catch (e) {}
+      if (typeof renderRetirementIfVisible === 'function') renderRetirementIfVisible();
     }
 
     function applyAllData(data) {
@@ -33,6 +55,7 @@
       if (data.exRightsInfo) exRightsInfo = data.exRightsInfo;
       if (data.snapshots) localStorage.setItem('ASSET_SNAPSHOTS_V1', JSON.stringify(data.snapshots));
       if (data.usdRate && typeof applyUsdRate === 'function') applyUsdRate(data.usdRate, { silent: true });
+      if (data.settings && data.settings.retirement) applyCloudRetirement(data.settings.retirement);
 
       localStorage.setItem(STORAGE_KEY_STOCKS, JSON.stringify(stocks));
       localStorage.setItem(STORAGE_KEY_PAST, JSON.stringify(pastColumns));
@@ -152,6 +175,9 @@
           if (cloudDecideOnLoad('stock', '股票管理', cloudAt) === 'local') {
             lastKnownStockCloudUpdatedAt = cloudAt;
             stockCloudLoaded = true;
+            // 本機退休設定還是範例、雲端有真正的設定時，先採用雲端的
+            const cloudRet0 = snap.data() && snap.data().settings && snap.data().settings.retirement;
+            if (cloudRet0 && typeof retirementSettings !== 'undefined' && !retirementSettings.touched) applyCloudRetirement(cloudRet0);
             await pushStockToCloud();
             return;
           }
@@ -159,6 +185,9 @@
           lastKnownStockCloudUpdatedAt = cloudAt;
           stockCloudLoaded = true;
           cloudMarkSynced('stock', cloudAt, Date.now());
+          // 舊帳號：雲端還沒有退休設定、但這台改過 → 補上傳一次
+          const cloudHasRet = !!(snap.data().settings && snap.data().settings.retirement);
+          if (!cloudHasRet && retirementForCloud()) await pushStockToCloud();
         } else {
           const startedAt = Date.now();
           const data = gatherAllData();
@@ -199,7 +228,13 @@
           }
         }
         const data = gatherAllData();
+        // 這台沒改過退休設定、也沒按還原時，保留雲端原本那份，不要因為整份覆蓋而被刪掉
+        if (!data.settings && snap.exists) {
+          const cloudRet = snap.data() && snap.data().settings && snap.data().settings.retirement;
+          if (cloudRet) data.settings = { retirement: cloudRet };
+        }
         await ref.set(data);
+        retirementClearPending = false;
         lastKnownStockCloudUpdatedAt = data.updatedAt;
         cloudMarkSynced('stock', data.updatedAt, startedAt);
         cloudStatusSet('stock', '股票管理', 'ok');

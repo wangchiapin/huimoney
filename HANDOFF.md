@@ -36,6 +36,13 @@
 - **跟 All-MoneyBook 同步時**：All-MoneyBook 的 scripts 直接複製進來就好，名稱不用改；只要確認 index.html 第一支 script 還是 `storage-prefix.js`。
 - 測試：無頭瀏覽器實測 36 項（舊版→新版搬家、其他網站與 firebase 名稱不動、新版存檔不碰舊名稱、只開過 All-MoneyBook 的瀏覽器不搬、清空重置、備份匯出→重置→匯入、新版沒有多出錯誤）；對照組（前綴程式換成空的）會有 12 項失敗，確認測試有效。
 
+## 退休試算設定上雲端（2026-10-19）
+- 放在「股票管理」那份雲端文件（`stockAssets/{uid}`）的 `settings.retirement`，Firebase 規則不用改。存股試算、貓咪開關、「目前停在哪一頁」**不同步**（Ben 決定）。
+- 規則（`scripts/stock-sync.js`）：本機改過（`touched`）才上傳，範例數字不上傳；按「還原範例」上傳 `null` 清掉雲端那份（`retirementClearPending`）；登入時雲端有就帶入本機；舊帳號（雲端沒有、本機改過）登入後補上傳一次；本機沒碰退休時整份覆蓋不會刪掉雲端那份。
+- `retirement.js` 的 `saveRetirementSettings()` 會呼叫 `scheduleCloudSync()`（2 秒後上傳）。`stock-sync.js` 與 All-MoneyBook 共用，All-MoneyBook 沒有退休試算（`retirementSettings` 不存在），整段自動略過；同步檔案時注意不要把這段蓋掉。
+- Apps Script：每日 JSON 備份自動包含這份；`huimoney-sync.gs` 沒有顯示它的分頁（Ben 決定不顯示），不用重貼。
+- 測試：假雲端資料庫 27 項（上傳、新裝置帶入、舊帳號補上傳、衝突時不被刪、還原範例清雲端、沒登入）。
+
 ## 2026-10-19 新增 📒 記帳分頁（第 1 批，僅 huimoney 有，All-MoneyBook 沒有）
 - 檔案：`scripts/ledger.js`（資料層＋雲端同步）、`scripts/ledger-ui.js`（畫面）、`styles/ledger.css`；index.html、shared.js（switchAppView）、stock.js（nav state）有小改。
 - 本機儲存：`HUI_LEDGER_V1`（整包）、`HUI_LEDGER_META_V1`（lastSynced/dirty）、`HUI_LEDGER_PRE_SYNC_BACKUP_V1`（採用雲端前的本機備份）。

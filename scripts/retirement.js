@@ -1,7 +1,8 @@
 /* ========================================================================
    退休試算（想退休的年齡 / 開始領退休專戶 的資產試算）
    ------------------------------------------------------------------------
-   - 所有設定存在瀏覽器本機 localStorage（RETIREMENT_SETTINGS_V1），可隨「匯出備份 (JSON)」一起備份。
+   - 設定存在瀏覽器本機 localStorage（RETIREMENT_SETTINGS_V1），可隨「匯出備份 (JSON)」一起備份；
+     登入雲端時，改過的設定會一起上傳到「股票管理」那份雲端文件（settings.retirement，見 stock-sync.js）。
    - 股票現值、每月定期定額、殖利率可以「自動帶入」股票管理裡已輸入的資料，也可以手動輸入。
    - 退休專戶（例如退撫基金、勞退、其他長期帳戶）由使用者自行新增、命名與設定。
    - 單位：畫面上的金額一律是「萬元」；股票管理裡的資料是「元」，帶入時 ÷ 10000。
@@ -113,6 +114,8 @@ function importRetirementSettings(raw) {
 function saveRetirementSettings() {
   try { localStorage.setItem(RETIREMENT_STORAGE_KEY, JSON.stringify(retirementSettings)); }
   catch (e) { if (typeof showToast === 'function') showToast('⚠️ 退休試算設定儲存失敗', 'error'); }
+  // 登入雲端時一起上傳（跟股票管理同一份雲端文件；範例數字沒改過不上傳，見 stock-sync.js）
+  if (typeof scheduleCloudSync === 'function') scheduleCloudSync();
 }
 
 /* ====== 從股票管理資料算出「自動帶入」的數字（單位：元；顯示時再換成萬） ====== */
@@ -472,6 +475,7 @@ function retRemoveAccount(i) {
 function retResetDefaults() {
   if (!confirm('要把退休試算的所有數字還原成範例嗎？（你填的設定會消失）')) return;
   retirementSettings = retirementDefaults();
+  if (typeof retirementClearPending !== 'undefined') retirementClearPending = true;   // 雲端那份也要清掉
   saveRetirementSettings();
   renderRetirement();
 }
