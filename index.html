@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="styles/cat-pet.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
 
-  <!-- Firebase (compat SDK)：huimoney 目前不接雲端，所以先不載入；要接上時把下面三行的註解拿掉，並在 scripts/shared.js 填好 firebaseConfig  -->
+  <!-- Firebase (compat SDK)：雲端同步用，專案是 huy-money，設定在 scripts/shared.js 的 firebaseConfig。載入失敗時網頁會自動退回「只存本機」。  -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -49,7 +49,7 @@
       </label>
       <button class="btn btn-outline stmt-open-btn" id="stmtImportBtn" onclick="openStmtImport()">📥 匯入對帳單</button>
       <button class="btn stmt-pending-btn" id="stmtPendingBtn" onclick="openStmtPending()" style="display:none;">📬 自動收到的對帳單</button>
-      <span id="syncStatus" title="雲端同步目前還沒開放：資料只存在這個瀏覽器裡，清除瀏覽資料或換裝置就看不到，請用「設定 → 匯出備份」定期備份">☁️ 未連線（資料只存在本機）</span>
+      <span id="syncStatus" title="登入後資料會同步到雲端。沒登入時資料只存在這個瀏覽器裡，清除瀏覽資料或換裝置就看不到，請定期備份">☁️ 確認登入狀態中…</span>
       <button class="btn btn-outline" id="loginBtn" onclick="handleLoginClick()">🔑 登入雲端同步</button>
       <button class="btn btn-outline" id="logoutBtn" style="display:none;" onclick="firebaseSignOut()">登出</button>
     </div>

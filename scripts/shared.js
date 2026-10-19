@@ -139,18 +139,18 @@
     let fbAuth = null, fbDb = null, fbUser = null, cloudSaveTimer = null;
 
     try {
-      // 設定是空的、或沒有載入 Firebase 程式庫，就當作「沒有雲端」，不初始化
-      if (!firebaseConfig.apiKey || typeof firebase === 'undefined') throw new Error('huimoney：雲端同步未接上');
+      // 雲端同步（Firebase 專案 huy-money）已接上；只有設定是空的、或程式庫沒載入成功時，才當作「沒有雲端」
+      if (!firebaseConfig.apiKey || typeof firebase === 'undefined') throw new Error('huimoney：雲端沒有載入（設定是空的，或 Firebase 程式庫沒載入成功）');
       firebase.initializeApp(firebaseConfig);
       fbAuth = firebase.auth();
       fbDb = firebase.firestore();
     } catch (e) {
-      fbAuth = null; fbDb = null;   // 目前不接雲端，安靜略過
+      fbAuth = null; fbDb = null;   // 雲端沒載入成功：退回「只存本機」，標題列會顯示「雲端沒有連上」
     }
 
     function handleLoginClick() {
       if (!fbAuth) {
-        alert('☁️ 雲端同步目前還沒開放。\n\n你的資料只存在這台裝置的瀏覽器裡，請記得定期用「設定 → 匯出備份」下載備份。');
+        alert('☁️ 雲端功能沒有載入成功，暫時無法登入。\n\n可能是網路問題，請重新整理再試。在那之前你的資料只存在這台裝置的瀏覽器裡，請記得定期備份。');
         return;
       }
       const email = prompt("Email：");

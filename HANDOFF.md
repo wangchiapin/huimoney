@@ -1,18 +1,22 @@
-# huimoney 交接說明（2026-10-16 晚上更新）
+# huimoney 交接說明（2026-10-19 校正：雲端已接上、備份與記帳說明對齊現況）
 
 ## 專案基本資料
 - 倉庫：wangchiapin/huimoney，主分支 main。
 - 性質：給其他使用者試用的記帳與資產管理網頁。
-- 資料只存在使用者瀏覽器（localStorage），用 JSON 或 Excel 備份。GitHub Pages 上線。
+- 資料先存在使用者瀏覽器（localStorage）；**登入後會同步到雲端（Firebase 專案 `huy-money`，Email／密碼登入）**。也可用 JSON 或 Excel 備份。GitHub Pages 上線。
 - 舊的 All-MoneyBook 倉庫不要動，除非擁有者開口。
 
 ## 2026-10-16 換底：跟上 All-MoneyBook 最新版（af6976b）
 以 All-MoneyBook 當時最新版為底，做了這些差異：
-1. **雲端同步（Firebase）架構保留、但不接上**（擁有者 2026-10-16 決定）：財務、股票、保險、資產總覽每月紀錄的雲端程式都跟 All-MoneyBook 一樣留著；shared.js 的 firebaseConfig 是空白的，index.html 的三行 Firebase 程式庫被註解掉，所以 fbAuth／fbDb／fbUser 都是 null、不會連任何雲端。標題列顯示「☁️ 未連線（資料只存在本機）」和「🔑 登入雲端同步」按鈕，按下去只跳提示「雲端同步目前還沒開放」。
-   以後要接上：填 firebaseConfig → 打開 index.html 的三行註解 → 把 shared.js 的 handleLoginClick() 裡的提示換回 All-MoneyBook 的登入流程。
+1. **雲端同步（Firebase）已接上（現況，2026-10-19 校正）**：這一點在 2026-10-16 最初是「保留但不接上」，之後已改成接上，舊的說法（firebaseConfig 空白、三行程式庫被註解掉、登入只跳「還沒開放」提示）已經不對。現況：
+   - `scripts/shared.js` 的 `firebaseConfig` 已填入 `huy-money` 專案；`index.html` 的三行 Firebase 程式庫是啟用的。
+   - 標題列「🔑 登入雲端同步」會跳出 Email／密碼輸入；找不到帳號時會先問要不要建立新帳號。登入後財務、股票、保險、資產總覽每月紀錄、記帳（含共同基金）、📬 自動收到的對帳單都會同步。
+   - 標題列狀態字：登入前是「☁️ 確認登入狀態中…」→「☁️ 未登入（資料只存在這個瀏覽器）」；登入後「☁️ 已連線：email」→「☁️ 已同步」。只有 Firebase 程式庫沒載入成功（網路問題）時，才會顯示「☁️ 雲端沒有連上」，退回只存本機。
+   - 注意：標題列的「已同步」目前只代表財務總覽；記帳有自己的同步（見下面「記帳」章節），失敗時只會跳一次提示。
 2. **密碼鎖定、子分頁隱藏**：設定選單和設定視窗拿掉；程式裡上百處檢查改用 shared.js 的「永遠不鎖」替身（isPageLocked、isFieldLocked、isTabHidden、lockPlaceholderHtml），這樣其他檔案跟 All-MoneyBook 幾乎一樣，以後同步比較容易。
 3. **媽的永豐拿掉**：stock-yf.js 刪除；它裡面的共用日期工具改放 scripts/date-utils.js，名稱改成 parseRocDateInt、autoSortByDate（All-MoneyBook 叫 yfParseDateInt、yfAutoSortByDate，以後同步時要記得改名）。股票分頁、手機分區列、Excel 匯出入、JSON 備份、資產總覽、小提醒卡片的永豐部分都拿掉。
-4. **📬 待確認保留**（stmt-pending.js）：資料來自擁有者私人的 Gmail 自動程式＋雲端，沒登入時按鈕不會出現。以後接上雲端時注意：那支自動程式只抓擁有者的 Gmail、只放進擁有者的帳號，給其他人用需要另外規劃。**📥 匯入對帳單保留**（國泰證券、富邦證券、台北富邦銀行、國泰世華銀行）。
+   - **刻意保留、不是漏刪（2026-10-19 檢查確認）**：`scripts/stmt-import.js` 裡還有永豐金證券寫進「媽的永豐」的程式（`stmtUseYf`、`stmtBuildYfItems`、`yfBuy`／`yfAppCost` 項目、`yfAutoSortByDate`），以及 `stock-add.js` 的 `YONG_FENG_TAB`、各 CSS 裡的 `yf-*` 樣式。這些是跟 All-MoneyBook 共用的檔案：`stmtUseYf()` 會檢查有沒有 `yfDetail`／`yfOverview`，huimoney 沒有，所以永遠回傳 false，永豐金證券的對帳單就自動當一般券商處理（寫進股票買進）。**這段程式在 huimoney 不會執行、不會報錯**，留著是為了之後跟 All-MoneyBook 同步時差異最小。
+   - 唯一要注意：那段裡呼叫的 `yfAutoSortByDate` 在 huimoney 叫 `autoSortByDate`，如果哪天讓 `stmtUseYf()` 變成 true，會出現找不到函式的錯誤；沒有這個打算就不用管。4. **📬 待確認保留**（stmt-pending.js）：資料來自擁有者私人的 Gmail 自動程式＋雲端，沒登入時按鈕不會出現。雲端已接上，但那支自動程式只抓擁有者的 Gmail、只放進擁有者的帳號，給其他人用需要另外規劃。**📥 匯入對帳單保留**（最初只有國泰證券、富邦證券、台北富邦銀行、國泰世華銀行；後來解析檔陸續加了很多家，完整名單看 All-MoneyBook 的 `scripts/stmt-parsers.js` 裡的 `LABELS`，也見下面第 4、5 批）。
 5. **股價與匯率**：用 All-MoneyBook 的抓價程式（.github/scripts/fetch_prices.py、workflow prices.yml，平日 16:10），另外加上美元匯率（open.er-api.com → usdTwd、fxDate）。舊的 tools/update_prices.py 和 update-prices.yml 刪掉。data/prices.json 已先換成新格式（股價取自 All-MoneyBook 10/15 的檔案、匯率取自舊 huimoney 檔案）。
 6. **匯率**：用 All-MoneyBook 的標題列「💵 美元匯率」（getUsdRate／applyUsdRate，存 USD_DEFAULT_RATE_V1）。開網頁時有新一天的匯率就自動套用一次（USD_FX_APPLIED_DATE_V1 記錄），手動改的會留到下次新匯率；舊版 huimoney 的 USD_FX_V1 第一次開啟時會搬過來。
 7. **保留 huimoney 自己的東西**：退休試算分頁（含手機底部分頁、重新整理後回到退休頁）、「含借出股數」預設勾選、新使用者預設只有「證券帳戶」且可刪（固定保留「美股複委託」）。
@@ -22,10 +26,11 @@
 - 檔案：`scripts/ledger.js`（資料層＋雲端同步）、`scripts/ledger-ui.js`（畫面）、`styles/ledger.css`；index.html、shared.js（switchAppView）、stock.js（nav state）有小改。
 - 本機儲存：`HUI_LEDGER_V1`（整包）、`HUI_LEDGER_META_V1`（lastSynced/dirty）、`HUI_LEDGER_PRE_SYNC_BACKUP_V1`（採用雲端前的本機備份）。
 - 雲端：Firestore 集合 `ledger`，文件 id = uid；改動後 3 秒 debounce 上傳；兩邊都有新變更時跳確認。第 2 批共同基金也會放在同一份文件。
-- Firebase 規則（huy-money 專案，需手動發布）：現有的 `match /{col}/{uid}` 白名單要加上 `'ledger'`，即 `col in ['financeAssets','stockAssets','insuranceAssets','overviewMonthly','ledger']`。
+- Firebase 規則（huy-money 專案）：`match /{col}/{uid}` 的白名單是 `col in ['financeAssets','stockAssets','insuranceAssets','overviewMonthly','ledger']`，另有 `stmtPending/{uid}/items/{itemId}`。**線上規則已確認包含 `ledger`（2026-10-19，擁有者貼出線上規則核對）**，不用再改。之後若新增集合，記得同步加進這份白名單並重新發布。
 - 預留欄位（第 1 批未使用）：支出 `payMethod`、`fund`、`source`；收入 `source`。
 - 特殊分類：`卡費`、`共同基金`（可改名、不可刪）。
-- **記帳不自動連動股票**：股票已實現損益、股利、借券收入都不寫進記帳；股票相關金錢之後只會透過銀行對帳單交割款進來。
+- **記帳不會從股票分頁自動連動**：股票分頁的已實現損益、股利、借券收入不會自己寫進記帳。**但「銀行對帳單比對」（第 4 批）會寫**：交割款記成分類「股票交割」的支出（買進）或收入（賣出入帳）、股息記成收入「股利」、借券費記成收入「借券收入」，已實現損益不進記帳。
+  - ⚠️ 現況注意：記帳的月支出／月收入統計只排除「卡費」和共同基金，**沒有排除「股票交割」**，所以買一筆大額股票，當月個人支出會跟著變大。這一點還沒有決定怎麼處理。
 - 沒搬：媽媽分類、Gemini AI、統計密碼鎖、Firebase 登入畫面、華語文教學自動同步、moneybook 任何資料。
 - 後續計畫：第 2 批共同基金分頁（基金為虛擬帳戶，不出現在財務總覽／資產總覽）；第 3 批圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
 

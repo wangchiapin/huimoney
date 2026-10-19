@@ -165,9 +165,17 @@
         } else {
           loginBtn.style.display = '';
           logoutBtn.style.display = 'none';
-          statusEl.textContent = '☁️ 未連線（僅本機儲存）';
+          statusEl.textContent = '☁️ 未登入（資料只存在這個瀏覽器）';
+          statusEl.title = '登入後資料會同步到雲端。沒登入時資料只存在這個瀏覽器裡，請定期備份';
         }
       });
+    } else {
+      // Firebase 程式庫沒載入成功（例如網路問題）：整個網頁只能存在這個瀏覽器
+      const statusEl = document.getElementById('syncStatus');
+      if (statusEl) {
+        statusEl.textContent = '☁️ 雲端沒有連上（資料只存在這個瀏覽器）';
+        statusEl.title = '雲端功能沒有載入成功，可能是網路問題。重新整理看看；在那之前資料只存在這個瀏覽器，請定期備份';
+      }
     }
 
     let lastKnownCloudUpdatedAt = null; // 上次成功讀取/寫入雲端時，雲端文件的 updatedAt，用來偵測其他裝置的變更
