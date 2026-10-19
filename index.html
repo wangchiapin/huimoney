@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="styles/overview.css">
   <link rel="stylesheet" href="styles/stmt-import.css">
   <link rel="stylesheet" href="styles/retirement.css">
+  <link rel="stylesheet" href="styles/ledger.css">
   <link rel="stylesheet" href="styles/mobile.css">
   <link rel="stylesheet" href="styles/cat-pet.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
@@ -38,6 +39,7 @@
       <button class="app-tab-btn" id="tabBtnStock" onclick="switchAppView('stock')"><span class="tab-ic">📈</span> <span class="tab-lb">股票管理</span></button>
       <button class="app-tab-btn" id="tabBtnInsurance" onclick="switchAppView('insurance')"><span class="tab-ic">🛡️</span> <span class="tab-lb">保險總覽</span></button>
       <button class="app-tab-btn" id="tabBtnOverview" onclick="switchAppView('overview')"><span class="tab-ic">📊</span> <span class="tab-lb">資產總覽</span></button>
+      <button class="app-tab-btn" id="tabBtnLedger" onclick="switchAppView('ledger')"><span class="tab-ic">📒</span> <span class="tab-lb">記帳</span></button>
       <button class="app-tab-btn" id="tabBtnRetirement" onclick="switchAppView('retirement')"><span class="tab-ic">🎯</span> <span class="tab-lb">退休試算</span></button>
     </div>
     <div class="app-header-cloud">
@@ -832,6 +834,11 @@
     <div id="overviewContent"></div>
   </div>
 
+  <!-- 📒 記帳：內容由 scripts/ledger-ui.js 產生（資料在 scripts/ledger.js） -->
+  <div id="ledgerView" style="display:none;">
+    <div id="ledgerContent"></div>
+  </div>
+
   <div id="insuranceView" style="display:none;">
 
     <div class="toolbar">
@@ -1006,6 +1013,8 @@
   <script src="scripts/insurance.js"></script>
   <script src="scripts/overview.js"></script>
   <script src="scripts/retirement.js"></script>
+  <script src="scripts/ledger.js"></script>
+  <script src="scripts/ledger-ui.js"></script>
   <script src="scripts/export-excel.js"></script>
   <script src="scripts/import-excel.js"></script>
   <script src="scripts/tips-widget.js"></script>

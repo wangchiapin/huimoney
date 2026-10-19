@@ -18,6 +18,17 @@
 7. **保留 huimoney 自己的東西**：退休試算分頁（含手機底部分頁、重新整理後回到退休頁）、「含借出股數」預設勾選、新使用者預設只有「證券帳戶」且可刪（固定保留「美股複委託」）。
 8. 手機版退休試算的設定區改成一欄（styles/retirement.css 最後一行）。
 
+## 2026-10-19 新增 📒 記帳分頁（第 1 批，僅 huimoney 有，All-MoneyBook 沒有）
+- 檔案：`scripts/ledger.js`（資料層＋雲端同步）、`scripts/ledger-ui.js`（畫面）、`styles/ledger.css`；index.html、shared.js（switchAppView）、stock.js（nav state）有小改。
+- 本機儲存：`HUI_LEDGER_V1`（整包）、`HUI_LEDGER_META_V1`（lastSynced/dirty）、`HUI_LEDGER_PRE_SYNC_BACKUP_V1`（採用雲端前的本機備份）。
+- 雲端：Firestore 集合 `ledger`，文件 id = uid；改動後 3 秒 debounce 上傳；兩邊都有新變更時跳確認。第 2 批共同基金也會放在同一份文件。
+- Firebase 規則需在 huy-money 專案手動發布：`match /ledger/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }`
+- 預留欄位（第 1 批未使用）：支出 `payMethod`、`fund`、`source`；收入 `source`。
+- 特殊分類：`卡費`、`共同基金`（可改名、不可刪）。
+- **記帳不自動連動股票**：股票已實現損益、股利、借券收入都不寫進記帳；股票相關金錢之後只會透過銀行對帳單交割款進來。
+- 沒搬：媽媽分類、Gemini AI、統計密碼鎖、Firebase 登入畫面、華語文教學自動同步、moneybook 任何資料。
+- 後續計畫：第 2 批共同基金分頁（基金為虛擬帳戶，不出現在財務總覽／資產總覽）；第 3 批圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
+
 ## 還沒確認
 - 上線後到 Actions 手動跑一次「每日更新收盤價」，確認美股與匯率有抓到。
 - 上櫃股票價格欄位名稱（新抓價程式用 SecuritiesCompanyCode／Close，跟 All-MoneyBook 一樣）。

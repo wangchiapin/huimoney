@@ -198,6 +198,8 @@
       const tabOverview = document.getElementById('tabBtnOverview');
       const retirementView = document.getElementById('retirementView');
       const tabRetirement = document.getElementById('tabBtnRetirement');
+      const ledgerView = document.getElementById('ledgerView');
+      const tabLedger = document.getElementById('tabBtnLedger');
 
       financeView.style.display = 'none';
       stockView.style.display = 'none';
@@ -206,6 +208,8 @@
       if (tabOverview) tabOverview.classList.remove('active');
       if (retirementView) retirementView.style.display = 'none';
       if (tabRetirement) tabRetirement.classList.remove('active');
+      if (ledgerView) ledgerView.style.display = 'none';
+      if (tabLedger) tabLedger.classList.remove('active');
       tabFinance.classList.remove('active');
       tabStock.classList.remove('active');
       if (tabInsurance) tabInsurance.classList.remove('active');
@@ -225,6 +229,10 @@
         if (retirementView) retirementView.style.display = 'block';
         if (tabRetirement) tabRetirement.classList.add('active');
         if (typeof renderRetirement === 'function') renderRetirement();
+      } else if (view === 'ledger') {
+        if (ledgerView) ledgerView.style.display = 'block';
+        if (tabLedger) tabLedger.classList.add('active');
+        if (typeof showLedger === 'function') showLedger();
       } else if (view === 'overview') {
         if (overviewView) overviewView.style.display = 'block';
         if (tabOverview) tabOverview.classList.add('active');

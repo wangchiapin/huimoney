@@ -1,0 +1,161 @@
+/* ====== 📒 記帳 (#ledgerView) 專屬樣式，沿用 finance.css 的 :root 色票（奶油色、圓角） ====== */
+#ledgerView {
+  --lg-out: #b5424d;
+  --lg-in: #4a8a5a;
+  padding: 18px 20px 40px; max-width: 1400px; margin: 0 auto; color: var(--text-main);
+}
+#ledgerView .lg-in { color: var(--lg-in); }
+#ledgerView .lg-out { color: var(--lg-out); }
+#ledgerView .lg-dim { color: #c9b9a2; }
+
+/* ---------- 上方：月份、子分頁、設定 ---------- */
+#ledgerView .lg-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+#ledgerView .lg-month-nav { display: flex; align-items: center; gap: 4px; background: #f1e2c9; border-radius: 18px; padding: 6px 8px; }
+#ledgerView .lg-icon-btn, .lg-overlay .lg-icon-btn {
+  border: none; background: transparent; cursor: pointer; font-size: 1.5rem; line-height: 1; padding: 4px 10px; color: var(--text-main); border-radius: 12px;
+}
+#ledgerView .lg-icon-btn:hover, .lg-overlay .lg-icon-btn:hover { background: rgba(255,255,255,0.6); }
+#ledgerView .lg-month-btn { border: none; background: transparent; cursor: pointer; text-align: center; padding: 2px 12px; border-radius: 12px; color: var(--text-main); font-family: inherit; }
+#ledgerView .lg-month-btn:hover { background: rgba(255,255,255,0.6); }
+#ledgerView .lg-month-btn b { display: block; font-size: 1.05rem; }
+#ledgerView .lg-month-btn small { display: block; font-size: 0.72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+#ledgerView .lg-subtabs { display: flex; background: #f1e2c9; border-radius: 999px; padding: 4px; gap: 4px; }
+#ledgerView .lg-subtabs button { border: none; background: transparent; cursor: pointer; padding: 8px 18px; border-radius: 999px; font-size: 0.88rem; font-family: inherit; color: var(--text-muted); font-weight: 600; }
+#ledgerView .lg-subtabs button.active { background: #fff; color: var(--text-main); box-shadow: 0 1px 3px rgba(120,80,50,0.15); }
+#ledgerView .lg-settings-btn { margin-left: auto; }
+
+/* ---------- 四格數字 ---------- */
+#ledgerView .lg-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+#ledgerView .lg-kpi { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 12px 14px; }
+#ledgerView .lg-kpi-main { background: #f8e9cf; border-color: #efcfb3; }
+#ledgerView .lg-kpi-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+#ledgerView .lg-kpi-value { font-size: 1.3rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* ---------- 三欄版面 ---------- */
+#ledgerView .lg-grid { display: flex; flex-direction: column; gap: 14px; }
+#ledgerView .lg-col-cats { display: flex; flex-direction: column; gap: 14px; }
+#ledgerView .lg-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 14px; }
+#ledgerView .lg-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+#ledgerView .lg-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 8px; }
+#ledgerView .lg-card-head .lg-card-title { margin-bottom: 0; }
+#ledgerView .lg-card-title small { font-weight: 400; }
+#ledgerView .lg-list { max-height: 620px; overflow-y: auto; }
+@media (min-width: 1000px) {
+  #ledgerView .lg-grid { display: grid; grid-template-columns: 1.15fr 1.15fr 0.8fr; align-items: start; gap: 14px; }
+}
+
+#ledgerView .lg-add-btn, .lg-overlay .lg-add-btn {
+  border: none; color: #fff; border-radius: 10px; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.lg-add-btn.out { background: #b5424d; }
+.lg-add-btn.in { background: #4a8a5a; }
+
+#ledgerView .lg-empty { text-align: center; padding: 36px 8px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
+#ledgerView .lg-empty-sm { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px; }
+
+#ledgerView .lg-day { margin-bottom: 12px; }
+#ledgerView .lg-day-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 2px 5px; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 0.9rem; }
+#ledgerView .lg-day-sub { font-size: 0.78rem; color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+#ledgerView .lg-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px dashed #ebe0cc; cursor: pointer; }
+#ledgerView .lg-row:hover { background: rgba(255,255,255,0.55); }
+#ledgerView .lg-dot, .lg-overlay .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+#ledgerView .lg-row-main { flex: 1; min-width: 0; }
+#ledgerView .lg-row-name { font-size: 0.98rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ledgerView .lg-row-name.lg-zero { color: var(--lg-out); }
+#ledgerView .lg-row-sub { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ledgerView .lg-row-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+#ledgerView .lg-del { border: none; background: transparent; cursor: pointer; color: #d6c4a6; font-size: 0.95rem; padding: 4px; }
+#ledgerView .lg-del:hover { color: var(--lg-out); }
+#ledgerView .lg-del-confirm { border: none; background: var(--lg-out); color: #fff; border-radius: 8px; padding: 5px 8px; font-size: 0.78rem; cursor: pointer; flex-shrink: 0; font-family: inherit; }
+
+/* ---------- 分類明細 ---------- */
+#ledgerView .lg-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 0.88rem; }
+#ledgerView .lg-cat-name { display: flex; align-items: center; gap: 7px; }
+#ledgerView .lg-cat-amt { font-variant-numeric: tabular-nums; }
+#ledgerView .lg-cat-sum { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color); font-weight: 700; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+
+/* ---------- 每月備註 ---------- */
+#ledgerView .lg-notes { margin-top: 14px; }
+#ledgerView .lg-note-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px dashed #ebe0cc; }
+#ledgerView .lg-note-text { flex: 1; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
+#ledgerView .lg-note-row input, #ledgerView .lg-note-add input { flex: 1; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 10px; font-size: 0.9rem; background: #fff; font-family: inherit; color: var(--text-main); }
+#ledgerView .lg-note-add { display: flex; gap: 8px; margin-top: 10px; }
+#ledgerView .lg-mini, .lg-overlay .lg-mini { border: none; background: transparent; cursor: pointer; color: var(--text-muted); padding: 4px 6px; font-size: 0.9rem; border-radius: 8px; flex-shrink: 0; }
+.lg-mini.dim { color: #d6c4a6; }
+.lg-mini.ok { background: #4a8a5a; color: #fff; }
+
+/* ---------- 統計 ---------- */
+#ledgerView .lg-stats { display: flex; flex-direction: column; gap: 14px; }
+#ledgerView .lg-st-scroll { overflow: auto; max-height: 500px; }
+#ledgerView .lg-st-table { border-collapse: collapse; font-size: 0.82rem; min-width: 100%; }
+#ledgerView .lg-st-table th { position: sticky; top: 0; background: var(--card-bg); z-index: 1; text-align: right; padding: 6px 8px; color: var(--text-muted); font-weight: 700; white-space: nowrap; border-bottom: 1px solid var(--border-color); }
+#ledgerView .lg-st-table td { text-align: right; padding: 6px 8px; white-space: nowrap; border-bottom: 1px solid #f1e6d2; font-variant-numeric: tabular-nums; background: transparent; }
+#ledgerView .lg-st-table td.b { font-weight: 700; }
+#ledgerView .lg-st-table .lg-st-month { text-align: left; font-weight: 700; position: sticky; left: 0; background: var(--card-bg); }
+#ledgerView .lg-st-table th:first-child { text-align: left; left: 0; z-index: 2; }
+#ledgerView .lg-st-row { cursor: pointer; }
+#ledgerView .lg-st-row:hover td { background: rgba(255,255,255,0.55); }
+#ledgerView .lg-st-row.active td, #ledgerView .lg-st-row.active .lg-st-month { background: #fbf0dc; }
+#ledgerView .lg-st-year td, #ledgerView .lg-st-year .lg-st-month { background: #f1e2c9; font-weight: 700; }
+#ledgerView .lg-st-notes td { text-align: left; background: #fbf5e8; padding: 8px 14px; white-space: normal; }
+#ledgerView .lg-st-note { text-align: center !important; }
+@media (min-width: 1100px) {
+  #ledgerView .lg-stats { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
+/* ---------- 彈出視窗（新增修改、設定、月份選擇） ---------- */
+.lg-overlay { position: fixed; inset: 0; background: rgba(60,40,25,0.45); z-index: 3000; display: flex; align-items: flex-end; justify-content: center; color: #5b4333; }
+.lg-overlay.center { align-items: center; }
+.lg-sheet { background: #fcf4e8; width: 100%; max-width: 460px; border-radius: 22px 22px 0 0; padding: 16px 18px 24px; max-height: 88vh; overflow-y: auto; }
+.lg-sheet.small { max-width: 330px; border-radius: 20px; padding: 18px; }
+@media (min-width: 761px) {
+  .lg-overlay { align-items: center; }
+  .lg-sheet { border-radius: 22px; }
+}
+.lg-sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.lg-sheet-head h3 { margin: 0; font-size: 1.1rem; }
+.lg-x { border: none; background: transparent; cursor: pointer; font-size: 1.1rem; color: #98806a; }
+.lg-label { display: block; font-size: 0.8rem; font-weight: 700; color: #98806a; margin: 0 2px 5px; }
+.lg-input { width: 100%; box-sizing: border-box; border: 1px solid #ecd8bc; border-radius: 12px; padding: 10px 12px; font-size: 16px; margin-bottom: 13px; background: #fff; color: #5b4333; font-family: inherit; }
+.lg-input.slim { margin-bottom: 0; padding: 7px 9px; font-size: 0.92rem; flex: 1; width: auto; min-width: 0; }
+.lg-amount-input { font-size: 20px; font-variant-numeric: tabular-nums; }
+.lg-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 13px; }
+.lg-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #ecd8bc; background: #fff; color: #5b4333; border-radius: 999px; padding: 6px 12px; font-size: 0.88rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+.lg-chip.active { border: 2px solid var(--c, #b5424d); background: #fff6e8; padding: 5px 11px; }
+.lg-submit { width: 100%; margin-top: 6px; padding: 13px 0; border: none; border-radius: 14px; color: #fff; font-weight: 700; font-size: 1.05rem; cursor: pointer; font-family: inherit; }
+.lg-submit.out { background: #b5424d; }
+.lg-submit.in { background: #4a8a5a; }
+
+.lg-pick-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.lg-pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.lg-pick-cell { border: 1px solid #ecd8bc; background: #fff; border-radius: 10px; padding: 10px 0; font-size: 0.9rem; cursor: pointer; color: #5b4333; font-family: inherit; }
+.lg-pick-cell.active { border: 2px solid #b5424d; background: #fbe9e6; color: #b5424d; font-weight: 700; }
+.lg-pick-today { width: 100%; margin-top: 12px; }
+
+.lg-set-tabs { display: flex; background: #f1e2c9; border-radius: 14px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+.lg-set-tabs button { flex: 1; border: none; background: transparent; cursor: pointer; padding: 8px 0; border-radius: 10px; font-size: 0.88rem; color: #98806a; font-family: inherit; }
+.lg-set-tabs button.active { background: #fff; color: #b5424d; font-weight: 700; }
+.lg-hint { font-size: 0.8rem; color: #98806a; line-height: 1.6; margin-bottom: 12px; }
+.lg-catman-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px dashed #ebe0cc; }
+.lg-catman-row.add { border-bottom: none; margin-top: 10px; }
+.lg-catman-row input[type=color] { width: 28px; height: 28px; border: none; padding: 0; background: none; cursor: pointer; flex-shrink: 0; }
+.lg-wide { width: 100%; margin-bottom: 10px; }
+.lg-danger { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #d8c4a4; }
+.lg-danger-btn { color: #b5424d !important; border-color: #b5424d !important; }
+.lg-danger-btn.armed { background: #b5424d !important; color: #fff !important; }
+
+/* ---------- 手機 ---------- */
+@media (max-width: 760px) {
+  #ledgerView { padding: 12px 12px 120px; }
+  #ledgerView .lg-top { gap: 8px; }
+  #ledgerView .lg-month-nav { flex: 1 1 100%; justify-content: space-between; }
+  #ledgerView .lg-subtabs { flex: 1; }
+  #ledgerView .lg-subtabs button { flex: 1; padding: 8px 0; }
+  #ledgerView .lg-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  #ledgerView .lg-kpi { padding: 10px; }
+  #ledgerView .lg-kpi-value { font-size: 1.1rem; }
+  #ledgerView .lg-list { max-height: none; }
+  #ledgerView .lg-st-scroll { max-height: 420px; }
+  .lg-overlay { z-index: 3000; }
+  .lg-sheet { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+}
