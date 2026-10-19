@@ -14,7 +14,7 @@ let lgNoteDraft = '';
 let lgNoteEditId = '';
 let lgNoteEditText = '';
 let lgNoteConfirmId = '';
-let lgSheet = null;               // 新增／修改視窗的狀態 { kind, id, category }
+let lgSheet = null;               // 新增／修改視窗的狀態 { kind, id, category, fund }
 let lgLastCat = { expense: '', income: '' };
 let lgPickYear = 0;
 let lgSettingsTab = 'expense';    // 'expense' | 'income' | 'backup'
@@ -112,7 +112,7 @@ function lgEntryListHtml(kind) {
           <span class="lg-dot" style="background:${lgEsc(cat.color)}"></span>
           <div class="lg-row-main">
             <div class="lg-row-name ${zero ? 'lg-zero' : ''}">${lgEsc(it.item || cat.name)}</div>
-            <div class="lg-row-sub">${lgEsc(cat.name)}${it.note ? ' · ' + lgEsc(it.note) : ''}</div>
+            <div class="lg-row-sub">${lgEsc(cat.name)}${lgFundTagHtml(it, isExp)}${it.note ? ' · ' + lgEsc(it.note) : ''}</div>
           </div>
           <span class="lg-row-amt ${isExp ? '' : 'lg-in'}">$${lgFmt(it[amountKey])}</span>
           ${confirming
@@ -137,6 +137,13 @@ function lgEntryListHtml(kind) {
     </div>`;
 }
 
+// 基金相關的小標籤：基金支出（誰付、錢從哪來）、共同基金匯入
+function lgFundTagHtml(it, isExp) {
+  if (!isExp) return '';
+  if (it.category === LG_FUND_CATEGORY_ID) return ' <span class="lg-tag">🏦 基金匯入</span>';
+  if (it.fund) return ` <span class="lg-tag">🏦 ${it.fund.from === 'fund' ? '基金付' : LG_WHO_LABEL[it.fund.payer] + '先墊'}・不算個人</span>`;
+  return '';
+}
 function lgRowClick(el) {
   if (lgConfirmKey) { lgConfirmKey = ''; renderLedger(); return; }
   lgOpenSheet(el.dataset.kind, el.dataset.id);
@@ -172,6 +179,7 @@ function lgCategoryCardHtml(kind, st) {
       <div class="lg-card-title">${isExp ? '支出分類明細' : '收入分類明細'}</div>
       ${rows}
       <div class="lg-cat-sum"><span>${isExp ? '支出總計' : '收入共計'}</span><span class="${isExp ? '' : 'lg-in'}">$${lgFmt(sum)}</span></div>
+      ${isExp && st.fundExcluded ? `<div class="lg-hint" style="margin:8px 0 0">另有共同基金的支出 $${lgFmt(st.fundExcluded)}，不算在上面（請看 🏦 共同基金分頁）</div>` : ''}
     </div>`;
 }
 
@@ -357,7 +365,7 @@ function lgOpenSheet(kind, id) {
   const today = lgTodayISO();
   const date = existing ? existing.date : (lgMonthKeyOf(today) === lgViewMonth ? today : `${lgViewMonth}-01`);
   let category = existing ? existing.category : (cats.some(c => c.id === lgLastCat[kind]) ? lgLastCat[kind] : (cats[0] ? cats[0].id : ''));
-  lgSheet = { kind, id: existing ? existing.id : '', category };
+  lgSheet = { kind, id: existing ? existing.id : '', category, fund: (isExp && existing && existing.fund) ? Object.assign({}, existing.fund) : null };
   const amount = existing ? (isExp ? existing.price : existing.amount) : '';
   const title = existing ? (isExp ? '修改這筆支出' : '修改這筆收入') : (isExp ? '新增一筆支出' : '新增一筆收入');
   const submitLabel = existing ? (isExp ? '更新這筆支出' : '更新這筆收入') : (isExp ? '記一筆支出' : '記一筆收入');
@@ -375,6 +383,7 @@ function lgOpenSheet(kind, id) {
         <input type="date" id="lgFDate" class="lg-input" value="${lgEsc(date)}">
         <label class="lg-label">分類</label>
         <div class="lg-chips" id="lgFChips">${chips}</div>
+        ${isExp ? '<div id="lgFundBox"></div>' : ''}
         <label class="lg-label">${isExp ? '項目' : '項目（選填）'}</label>
         <input type="text" id="lgFItem" class="lg-input" placeholder="${isExp ? '例如：晚餐、捷運、咖啡' : '例如：10月薪資'}" value="${lgEsc(existing ? existing.item : '')}">
         <label class="lg-label">金額</label>
@@ -384,6 +393,7 @@ function lgOpenSheet(kind, id) {
         <button type="button" class="lg-submit ${isExp ? 'out' : 'in'}" onclick="lgSubmitSheet()">${submitLabel}</button>
       </div>
     </div>`;
+  if (isExp) lgRenderFundBox();
   ['lgFItem', 'lgFAmount', 'lgFNote'].forEach(fid => {
     const el = document.getElementById(fid);
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') lgSubmitSheet(); });
@@ -395,7 +405,32 @@ function lgPickCategory(btn) {
   if (!lgSheet) return;
   lgSheet.category = btn.dataset.cat;
   document.querySelectorAll('#lgFChips .lg-chip').forEach(b => b.classList.toggle('active', b === btn));
+  if (lgSheet.kind === 'expense') lgRenderFundBox();
 }
+
+/* 支出視窗裡的「用途」：個人支出，或共同基金的支出（付款人、錢從哪來） */
+function lgRenderFundBox() {
+  const box = document.getElementById('lgFundBox');
+  if (!box || !lgSheet) return;
+  if (lgSheet.category === LG_FUND_CATEGORY_ID) {
+    box.innerHTML = `<div class="lg-fund-hint">🏦 分類是「共同基金」＝你匯了一筆錢進共同基金。這筆會同時出現在 🏦 共同基金分頁的匯入。</div>`;
+    return;
+  }
+  const f = lgSheet.fund;
+  const seg = (name, val, cur, label) => `<button type="button" class="${cur === val ? 'active' : ''}" onclick="${name}('${val}')">${label}</button>`;
+  box.innerHTML = `
+    <label class="lg-label">這筆錢是</label>
+    <div class="lg-seg">${seg('lgSetFundUse', 'no', f ? 'yes' : 'no', '個人支出')}${seg('lgSetFundUse', 'yes', f ? 'yes' : 'no', '🏦 共同基金的支出')}</div>
+    ${f ? `
+      <label class="lg-label">付款人</label>
+      <div class="lg-seg">${seg('lgSetFundPayer', 'wife', f.payer, '老婆')}${seg('lgSetFundPayer', 'husband', f.payer, '老公')}</div>
+      <label class="lg-label">錢從哪來</label>
+      <div class="lg-seg">${seg('lgSetFundFrom', 'fund', f.from, '基金帳戶直接付')}${seg('lgSetFundFrom', 'self', f.from, '個人先墊')}</div>
+      <div class="lg-fund-hint">共同基金的支出不算進個人本月支出。「個人先墊」會變成基金欠這個人的錢，之後在基金分頁結算。</div>` : ''}`;
+}
+function lgSetFundUse(v) { if (!lgSheet) return; lgSheet.fund = v === 'yes' ? (lgSheet.fund || { payer: 'wife', from: 'fund' }) : null; lgRenderFundBox(); }
+function lgSetFundPayer(v) { if (lgSheet && lgSheet.fund) { lgSheet.fund.payer = v; lgRenderFundBox(); } }
+function lgSetFundFrom(v) { if (lgSheet && lgSheet.fund) { lgSheet.fund.from = v; lgRenderFundBox(); } }
 function lgSubmitSheet() {
   if (!lgSheet) return;
   const { kind, id, category } = lgSheet;
@@ -408,11 +443,13 @@ function lgSubmitSheet() {
   if (!isFinite(num) || num < 0) { lgToast('金額要是 0 或正數', 'error'); return; }
   const item = document.getElementById('lgFItem').value.trim();
   const note = document.getElementById('lgFNote').value.trim();
-  const entry = isExp ? { date, category, item, price: num, note } : { date, category, item, amount: num, note };
+  const fund = (isExp && category !== LG_FUND_CATEGORY_ID && lgSheet.fund) ? { payer: lgSheet.fund.payer, from: lgSheet.fund.from } : null;
+  const entry = isExp ? { date, category, item, price: num, note, fund } : { date, category, item, amount: num, note };
   if (id) { if (isExp) lgUpdateExpense(id, entry); else lgUpdateIncome(id, entry); }
   else { if (isExp) lgAddExpense(entry); else lgAddIncome(entry); }
   lgLastCat[kind] = category;
   lgCloseOverlay();
+  if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();
   if (lgMonthKeyOf(date) !== lgViewMonth) {
     const mm = lgMonthLabel(lgMonthKeyOf(date)).tw;
     lgToast(`已記到 ${mm}（目前畫面看的是別的月份）`, 'success');
@@ -499,7 +536,7 @@ function lgOnImportFile(inp) {
   reader.onload = () => {
     const res = lgImportJsonText(String(reader.result || ''));
     if (!res) { alert('匯入失敗：檔案格式不正確'); return; }
-    alert(`匯入完成！\n新增支出 ${res.expenses} 筆、收入 ${res.incomes} 筆、備註 ${res.notes} 則、分類 ${res.categories} 個\n（本來就有的紀錄沒有重複加）`);
+    alert(`匯入完成！\n新增支出 ${res.expenses} 筆、收入 ${res.incomes} 筆、備註 ${res.notes} 則、基金紀錄 ${res.fundTxns} 筆、分類 ${res.categories} 個\n（本來就有的紀錄沒有重複加）`);
     lgRenderSettings();
   };
   reader.readAsText(f);

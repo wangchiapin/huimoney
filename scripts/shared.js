@@ -200,6 +200,8 @@
       const tabRetirement = document.getElementById('tabBtnRetirement');
       const ledgerView = document.getElementById('ledgerView');
       const tabLedger = document.getElementById('tabBtnLedger');
+      const fundView = document.getElementById('fundView');
+      const tabFund = document.getElementById('tabBtnFund');
 
       financeView.style.display = 'none';
       stockView.style.display = 'none';
@@ -210,6 +212,8 @@
       if (tabRetirement) tabRetirement.classList.remove('active');
       if (ledgerView) ledgerView.style.display = 'none';
       if (tabLedger) tabLedger.classList.remove('active');
+      if (fundView) fundView.style.display = 'none';
+      if (tabFund) tabFund.classList.remove('active');
       tabFinance.classList.remove('active');
       tabStock.classList.remove('active');
       if (tabInsurance) tabInsurance.classList.remove('active');
@@ -233,6 +237,10 @@
         if (ledgerView) ledgerView.style.display = 'block';
         if (tabLedger) tabLedger.classList.add('active');
         if (typeof showLedger === 'function') showLedger();
+      } else if (view === 'fund') {
+        if (fundView) fundView.style.display = 'block';
+        if (tabFund) tabFund.classList.add('active');
+        if (typeof showFund === 'function') showFund();
       } else if (view === 'overview') {
         if (overviewView) overviewView.style.display = 'block';
         if (tabOverview) tabOverview.classList.add('active');
@@ -297,3 +305,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => applyUsdRate(usdDefaultRate, { silent: true }));
+
+/* 手機底部分頁超過一屏時可以左右滑；切換分頁後把目前這顆滑到看得到的位置 */
+(function () {
+  const orig = switchAppView;
+  switchAppView = function (view) {
+    const r = orig.apply(this, arguments);
+    try {
+      const a = document.querySelector('.app-tabs .app-tab-btn.active');
+      if (a && a.scrollIntoView) a.scrollIntoView({ inline: 'center', block: 'nearest' });
+    } catch (e) { /* 略過 */ }
+    return r;
+  };
+})();

@@ -48,9 +48,11 @@
     background: #fcf4e8; border: 1px solid #ecd8bc; border-radius: 999px;
     padding: 5px;
     box-shadow: 0 6px 18px rgba(150,100,60,0.2);
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
+  .app-tabs::-webkit-scrollbar { display: none; }
   .app-tab-btn {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    flex: 1 0 auto; min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 1px;
     border: none !important; border-radius: 999px !important; background: transparent !important;
     color: #98806a !important; padding: 5px 0 4px !important; font-size: 10.5px !important;
   }

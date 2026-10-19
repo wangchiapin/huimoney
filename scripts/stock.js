@@ -362,6 +362,8 @@
           if (rv && rv.style.display !== 'none') appView = 'retirement';
           const lv = document.getElementById('ledgerView');
           if (lv && lv.style.display !== 'none') appView = 'ledger';
+          const fv = document.getElementById('fundView');
+          if (fv && fv.style.display !== 'none') appView = 'fund';
         }
         localStorage.setItem(NAV_STATE_KEY, JSON.stringify({
           appView: appView,
@@ -379,7 +381,9 @@
         const saved = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || 'null');
         if (!saved) return;
 
-        if (saved.appView === 'ledger') {
+        if (saved.appView === 'fund') {
+          if (typeof switchAppView === 'function') switchAppView('fund');
+        } else if (saved.appView === 'ledger') {
           if (typeof switchAppView === 'function') switchAppView('ledger');
         } else if (saved.appView === 'retirement') {
           if (typeof switchAppView === 'function') switchAppView('retirement');

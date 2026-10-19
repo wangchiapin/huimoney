@@ -73,6 +73,23 @@ function lgShiftMonth(mk, delta) {
 }
 
 /* ---------------- 資料整理（讀進來的資料一律先整理成固定格式） ---------------- */
+// 共同基金：支出的「基金資訊」{ payer: 'wife'|'husband', from: 'fund'|'self' }；一般個人支出是 null
+function lgNormFund(f, category) {
+  if (category === LG_FUND_CATEGORY_ID) return null;   // 分類是「共同基金」＝老婆匯入基金，本身不是基金支出
+  if (!f || typeof f !== 'object') return null;
+  return { payer: f.payer === 'husband' ? 'husband' : 'wife', from: f.from === 'self' ? 'self' : 'fund' };
+}
+function lgNormFundTxn(t) {
+  const kinds = ['deposit', 'expense', 'settle', 'opening'];
+  return {
+    id: String(t.id), date: t.date, kind: kinds.includes(t.kind) ? t.kind : 'deposit',
+    who: t.who === 'wife' ? 'wife' : (t.who === 'husband' ? 'husband' : ''),
+    item: String(t.item || ''), amount: Number(t.amount) || 0,
+    from: t.from === 'self' ? 'self' : (t.from === 'fund' ? 'fund' : ''),
+    note: String(t.note || ''), createdAt: Number(t.createdAt) || 0
+  };
+}
+
 function lgNormalize(d) {
   d = d && typeof d === 'object' ? d : {};
   const arr = v => (Array.isArray(v) ? v : []);
@@ -84,7 +101,7 @@ function lgNormalize(d) {
     expenses: arr(d.expenses).filter(e => e && e.id && isDate(e.date)).map(e => Object.assign({}, e, {
       id: String(e.id), date: e.date, category: String(e.category || ''), item: String(e.item || ''),
       price: Number(e.price) || 0, note: String(e.note || ''),
-      payMethod: e.payMethod || '', fund: e.fund || null, source: e.source || 'manual'
+      payMethod: e.payMethod || '', fund: lgNormFund(e.fund, String(e.category || '')), source: e.source || 'manual'
     })),
     incomes: arr(d.incomes).filter(i => i && i.id && isDate(i.date)).map(i => Object.assign({}, i, {
       id: String(i.id), date: i.date, category: String(i.category || ''), item: String(i.item || ''),
@@ -93,6 +110,7 @@ function lgNormalize(d) {
     categories: cats.length ? cats : lgClone(LG_DEFAULT_CATEGORIES),
     incomeCategories: incCats.length ? incCats : lgClone(LG_DEFAULT_INCOME_CATEGORIES),
     monthlyNotes: arr(d.monthlyNotes).filter(n => n && n.id && n.month && typeof n.text === 'string').map(n => ({ id: String(n.id), month: String(n.month), text: n.text, createdAt: Number(n.createdAt) || 0 })),
+    fundTxns: arr(d.fundTxns).filter(t => t && t.id && isDate(t.date)).map(lgNormFundTxn),
     updatedAt: typeof d.updatedAt === 'string' ? d.updatedAt : ''
   };
 }
@@ -120,7 +138,7 @@ let lg = lgLoadLocal();   // 目前的整份記帳資料
 // 沒有任何紀錄（只有預設分類）
 function lgIsEmpty(data) {
   const d = data || lg;
-  return !d.expenses.length && !d.incomes.length && !d.monthlyNotes.length;
+  return !d.expenses.length && !d.incomes.length && !d.monthlyNotes.length && !(d.fundTxns || []).length;
 }
 
 // 存到本機，並排定上傳雲端
@@ -219,9 +237,11 @@ function lgMonthStats(month) {
   const categoryTotals = {};
   lg.categories.forEach(c => { categoryTotals[c.id] = 0; });
   let total = 0;
+  let fundExcluded = 0;   // 共同基金的支出（基金付的、或先墊後要結算的），不算個人支出
   lg.expenses.forEach(e => {
     if (lgMonthKeyOf(e.date) !== month) return;
     const p = Number(e.price) || 0;
+    if (e.fund) { fundExcluded += p; return; }
     categoryTotals[e.category] = (categoryTotals[e.category] || 0) + p;
     total += p;
   });
@@ -237,7 +257,61 @@ function lgMonthStats(month) {
     incomeCategoryTotals[i.category] = (incomeCategoryTotals[i.category] || 0) + a;
     incomeTotal += a;
   });
-  return { categoryTotals, total, cardFee, netExpense, incomeCategoryTotals, incomeTotal, balance: incomeTotal - netExpense };
+  return { categoryTotals, total, cardFee, netExpense, fundExcluded, incomeCategoryTotals, incomeTotal, balance: incomeTotal - netExpense };
+}
+
+
+/* ====================================================================
+   共同基金（虛擬帳戶，只在共同基金分頁出現，不進財務總覽／資產總覽）
+   資料來源有兩處，算帳時合在一起看：
+   - 記帳裡的支出：分類是「共同基金」＝老婆匯入；有 fund 欄位＝基金支出（付款人、錢從哪來）
+   - fundTxns：只在基金分頁記的（老公匯入、老公的支出、結算、期初餘額）
+   算法：
+   - 帳戶實際餘額 ＝ 匯入 ＋ 期初 － 基金帳戶直接付的支出 － 結算領出
+   - 欠某人 ＝ 他「先墊」的支出合計 － 他已結算領出的（不會小於 0，老公老婆各算各的）
+   - 扣掉欠款後可用 ＝ 實際餘額 － 欠老婆 － 欠老公
+   ==================================================================== */
+const LG_WHO_LABEL = { wife: '老婆', husband: '老公' };
+
+// 把兩處資料合成同一份清單：{ src:'ledger'|'fund', id, date, kind, who, item, amount, from, note }
+function lgFundEntries() {
+  const list = [];
+  lg.expenses.forEach(e => {
+    if (e.category === LG_FUND_CATEGORY_ID) {
+      list.push({ src: 'ledger', id: e.id, date: e.date, kind: 'deposit', who: 'wife', item: e.item, amount: Number(e.price) || 0, from: '', note: e.note });
+    } else if (e.fund) {
+      list.push({ src: 'ledger', id: e.id, date: e.date, kind: 'expense', who: e.fund.payer, item: e.item, amount: Number(e.price) || 0, from: e.fund.from, note: e.note, category: e.category });
+    }
+  });
+  lg.fundTxns.forEach(t => list.push({ src: 'fund', id: t.id, date: t.date, kind: t.kind, who: t.who, item: t.item, amount: t.amount, from: t.from, note: t.note }));
+  return list.sort((a, b) => (a.date === b.date ? String(b.id).localeCompare(String(a.id)) : (a.date < b.date ? 1 : -1)));
+}
+function lgFundSummary() {
+  let deposits = 0, opening = 0, paidFromFund = 0, settled = { wife: 0, husband: 0 }, fronted = { wife: 0, husband: 0 };
+  lgFundEntries().forEach(x => {
+    if (x.kind === 'deposit') deposits += x.amount;
+    else if (x.kind === 'opening') opening += x.amount;
+    else if (x.kind === 'settle') settled[x.who || 'wife'] += x.amount;
+    else if (x.kind === 'expense') {
+      if (x.from === 'self') fronted[x.who || 'wife'] += x.amount; else paidFromFund += x.amount;
+    }
+  });
+  const balance = deposits + opening - paidFromFund - settled.wife - settled.husband;
+  const owedWife = Math.max(0, fronted.wife - settled.wife);
+  const owedHusband = Math.max(0, fronted.husband - settled.husband);
+  return { deposits, opening, paidFromFund, settled, fronted, balance, owedWife, owedHusband, available: balance - owedWife - owedHusband };
+}
+function lgAddFundTxn(t) {
+  lg.fundTxns.push(lgNormFundTxn(Object.assign({ id: lgGenId(), createdAt: Date.now() }, t)));
+  lgSave();
+}
+function lgUpdateFundTxn(id, patch) {
+  lg.fundTxns = lg.fundTxns.map(t => (t.id === id ? lgNormFundTxn(Object.assign({}, t, patch)) : t));
+  lgSave();
+}
+function lgDeleteFundTxn(id) {
+  lg.fundTxns = lg.fundTxns.filter(t => t.id !== id);
+  lgSave();
 }
 
 /* ---------------- 備份（JSON）：匯出整份、匯入時合併（已有的 id 不會重複加） ---------------- */
@@ -263,9 +337,12 @@ function lgImportJsonText(text) {
   const haveE = new Set(lg.expenses.map(e => e.id));
   const haveI = new Set(lg.incomes.map(i => i.id));
   const haveN = new Set(lg.monthlyNotes.map(n => n.id));
+  const haveF = new Set(lg.fundTxns.map(t => t.id));
+  res.fundTxns = 0;
   inc.expenses.forEach(e => { if (!haveE.has(e.id)) { lg.expenses.push(e); res.expenses++; } });
   inc.incomes.forEach(i => { if (!haveI.has(i.id)) { lg.incomes.push(i); res.incomes++; } });
   inc.monthlyNotes.forEach(n => { if (!haveN.has(n.id)) { lg.monthlyNotes.push(n); res.notes++; } });
+  inc.fundTxns.forEach(t => { if (!haveF.has(t.id)) { lg.fundTxns.push(t); res.fundTxns++; } });
   if (Array.isArray(raw.categories)) inc.categories.forEach(c => { if (!lg.categories.some(x => x.id === c.id)) { lg.categories.push(c); res.categories++; } });
   if (Array.isArray(raw.incomeCategories)) inc.incomeCategories.forEach(c => { if (!lg.incomeCategories.some(x => x.id === c.id)) { lg.incomeCategories.push(c); res.categories++; } });
   // 匯入的紀錄用到、但分類清單裡沒有的分類，補進來，避免統計對不起來
@@ -279,6 +356,7 @@ function lgClearAllRecords() {
   lg.expenses = [];
   lg.incomes = [];
   lg.monthlyNotes = [];
+  lg.fundTxns = [];
   lgSave();
 }
 

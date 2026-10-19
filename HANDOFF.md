@@ -29,6 +29,14 @@
 - 沒搬：媽媽分類、Gemini AI、統計密碼鎖、Firebase 登入畫面、華語文教學自動同步、moneybook 任何資料。
 - 後續計畫：第 2 批共同基金分頁（基金為虛擬帳戶，不出現在財務總覽／資產總覽）；第 3 批圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
 
+## 2026-10-19 新增 🏦 共同基金分頁（第 2 批，只有 huimoney 有）
+- 檔案：`scripts/fund-ui.js`（畫面）；算帳與資料在 `scripts/ledger.js`（`lgFundEntries`、`lgFundSummary`、`fundTxns`）；樣式併在 `styles/ledger.css`（`#fundView` 與 `#ledgerView` 共用）。
+- 資料跟記帳同一份文件 `ledger/{uid}`，Firebase 規則不用再改。多了 `fundTxns`（老公匯入／老公支出／結算／期初餘額），記帳支出的 `fund` 欄位現在是 `{payer:'wife'|'husband', from:'fund'|'self'}` 或 null。
+- 規則：分類「共同基金」的支出＝老婆匯入（基金分頁的老婆匯入與它是同一筆，改刪同步）；有 `fund` 的支出不算個人月支出（`lgMonthStats().fundExcluded`）。
+- 算法：實際餘額＝匯入＋期初－基金直接付－結算領出；欠某人＝他先墊－他已結算（不小於 0，各算各的）；可用＝餘額－欠老婆－欠老公。
+- 基金不出現在財務總覽／資產總覽；手機底部 7 個分頁可左右滑。
+- 後續：第 3 批 圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
+
 ## 還沒確認
 - 上線後到 Actions 手動跑一次「每日更新收盤價」，確認美股與匯率有抓到。
 - 上櫃股票價格欄位名稱（新抓價程式用 SecuritiesCompanyCode／Close，跟 All-MoneyBook 一樣）。

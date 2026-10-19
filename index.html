@@ -40,6 +40,7 @@
       <button class="app-tab-btn" id="tabBtnInsurance" onclick="switchAppView('insurance')"><span class="tab-ic">🛡️</span> <span class="tab-lb">保險總覽</span></button>
       <button class="app-tab-btn" id="tabBtnOverview" onclick="switchAppView('overview')"><span class="tab-ic">📊</span> <span class="tab-lb">資產總覽</span></button>
       <button class="app-tab-btn" id="tabBtnLedger" onclick="switchAppView('ledger')"><span class="tab-ic">📒</span> <span class="tab-lb">記帳</span></button>
+      <button class="app-tab-btn" id="tabBtnFund" onclick="switchAppView('fund')"><span class="tab-ic">🏦</span> <span class="tab-lb">共同基金</span></button>
       <button class="app-tab-btn" id="tabBtnRetirement" onclick="switchAppView('retirement')"><span class="tab-ic">🎯</span> <span class="tab-lb">退休試算</span></button>
     </div>
     <div class="app-header-cloud">
@@ -838,6 +839,10 @@
   <div id="ledgerView" style="display:none;">
     <div id="ledgerContent"></div>
   </div>
+  <!-- 🏦 共同基金：內容由 scripts/fund-ui.js 產生（算帳在 scripts/ledger.js） -->
+  <div id="fundView" style="display:none;">
+    <div id="fundContent"></div>
+  </div>
 
   <div id="insuranceView" style="display:none;">
 
@@ -1015,6 +1020,7 @@
   <script src="scripts/retirement.js"></script>
   <script src="scripts/ledger.js"></script>
   <script src="scripts/ledger-ui.js"></script>
+  <script src="scripts/fund-ui.js"></script>
   <script src="scripts/export-excel.js"></script>
   <script src="scripts/import-excel.js"></script>
   <script src="scripts/tips-widget.js"></script>
