@@ -31,6 +31,15 @@ function lgXlStyleSheet(ws, widths) {
   ws.views = [{ state: 'frozen', ySplit: 1 }];
 }
 
+// 「對帳單記號」＝這筆記帳已經和哪一行銀行對帳單核對過。匯出入時一起帶著，
+// 換裝置匯入後才不會又把同一份對帳單重複記一次。格式：對帳單編號‖那一行的識別碼
+function lgXlStmtOut(st) { return st && st.key ? (String(st.sid || '') + '‖' + st.key) : ''; }
+function lgXlStmtIn(text) {
+  const t = String(text || '');
+  const i = t.indexOf('‖');
+  if (i < 0 || i === t.length - 1) return null;
+  return { sid: t.slice(0, i), key: t.slice(i + 1) };
+}
 async function lgExportXlsx() {
   if (typeof ExcelJS === 'undefined') { alert('Excel 匯出套件尚未載入完成（需要網路），請稍後再試一次。'); return; }
   try {
@@ -40,20 +49,20 @@ async function lgExportXlsx() {
     wb.created = new Date();
 
     const wsE = wb.addWorksheet('支出');
-    wsE.addRow(['編號', '日期', '分類', '項目', '金額', '備註', '共同基金支出', '付款人', '錢從哪來', '付款方式']);
+    wsE.addRow(['編號', '日期', '分類', '項目', '金額', '備註', '共同基金支出', '付款人', '錢從哪來', '付款方式', '對帳單記號']);
     lg.expenses.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).forEach(e => {
       wsE.addRow([e.id, e.date, (eMap[e.category] || { name: e.category }).name, e.item, e.price, e.note,
-        e.fund ? '是' : '', e.fund ? LG_XL_WHO[e.fund.payer] : '', e.fund ? (e.fund.from === 'self' ? '個人先墊' : '基金帳戶直接付') : '', e.payMethod ? lgPayName(e.payMethod) : '']);
+        e.fund ? '是' : '', e.fund ? LG_XL_WHO[e.fund.payer] : '', e.fund ? (e.fund.from === 'self' ? '個人先墊' : '基金帳戶直接付') : '', e.payMethod ? lgPayName(e.payMethod) : '', lgXlStmtOut(e.stmt)]);
     });
-    lgXlStyleSheet(wsE, [18, 12, 12, 24, 12, 24, 14, 10, 16, 16]);
+    lgXlStyleSheet(wsE, [18, 12, 12, 24, 12, 24, 14, 10, 16, 16, 24]);
     wsE.getColumn(5).numFmt = '#,##0';
 
     const wsI = wb.addWorksheet('收入');
-    wsI.addRow(['編號', '日期', '分類', '項目', '金額', '備註']);
+    wsI.addRow(['編號', '日期', '分類', '項目', '金額', '備註', '對帳單記號']);
     lg.incomes.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).forEach(i => {
-      wsI.addRow([i.id, i.date, (iMap[i.category] || { name: i.category }).name, i.item, i.amount, i.note]);
+      wsI.addRow([i.id, i.date, (iMap[i.category] || { name: i.category }).name, i.item, i.amount, i.note, lgXlStmtOut(i.stmt)]);
     });
-    lgXlStyleSheet(wsI, [18, 12, 12, 24, 12, 24]);
+    lgXlStyleSheet(wsI, [18, 12, 12, 24, 12, 24, 24]);
     wsI.getColumn(5).numFmt = '#,##0';
 
     const wsF = wb.addWorksheet('共同基金');
@@ -146,13 +155,14 @@ function lgXlParseWorkbook(wb) {
       id: lgXlText(r['編號']), date, category: lgCatIdByName('expense', lgXlText(r['分類'])), item: lgXlText(r['項目']), price, note: lgXlText(r['備註']),
       fund: fundOn ? { payer: LG_XL_WHO_REV[lgXlText(r['付款人'])] || 'wife', from: lgXlText(r['錢從哪來']) === '個人先墊' ? 'self' : 'fund' } : null,
       payMethod: lgPayIdByName(lgXlText(r['付款方式'])),
+      stmt: lgXlStmtIn(lgXlText(r['對帳單記號'])),
       source: 'excel'
     });
   });
   lgXlRows(sheet('收入')).forEach(r => {
     const date = lgXlDate(r['日期']), amount = lgXlNum(r['金額']);
     if (!date || !isFinite(amount) || amount < 0) { bad++; return; }
-    rec.incomes.push({ id: lgXlText(r['編號']), date, category: lgCatIdByName('income', lgXlText(r['分類'])), item: lgXlText(r['項目']), amount, note: lgXlText(r['備註']), source: 'excel' });
+    rec.incomes.push({ id: lgXlText(r['編號']), date, category: lgCatIdByName('income', lgXlText(r['分類'])), item: lgXlText(r['項目']), amount, note: lgXlText(r['備註']), stmt: lgXlStmtIn(lgXlText(r['對帳單記號'])), source: 'excel' });
   });
   lgXlRows(sheet('共同基金')).forEach(r => {
     const kind = LG_XL_KIND_REV[lgXlText(r['類型'])];

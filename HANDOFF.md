@@ -12,7 +12,9 @@
    - `scripts/shared.js` 的 `firebaseConfig` 已填入 `huy-money` 專案；`index.html` 的三行 Firebase 程式庫是啟用的。
    - 標題列「🔑 登入雲端同步」會跳出 Email／密碼輸入；找不到帳號時會先問要不要建立新帳號。登入後財務、股票、保險、資產總覽每月紀錄、記帳（含共同基金）、📬 自動收到的對帳單都會同步。
    - 標題列狀態字：登入前是「☁️ 確認登入狀態中…」→「☁️ 未登入（資料只存在這個瀏覽器）」；登入後「☁️ 已連線：email」→「☁️ 已同步」。只有 Firebase 程式庫沒載入成功（網路問題）時，才會顯示「☁️ 雲端沒有連上」，退回只存本機。
-   - 注意：標題列的「已同步」目前只代表財務總覽；記帳有自己的同步（見下面「記帳」章節），失敗時只會跳一次提示。
+   - 標題列狀態由 `scripts/cloud-guard.js` 合併財務總覽／股票／保險／記帳四塊回報：全部成功才是「已同步」；有失敗或暫停會直接寫出哪一塊；本機有未上傳修改時顯示「有變更還沒上傳」。
+   - 雲端覆蓋保護：`CLOUD_SYNC_META_V1`（每塊的 dirty／lastKnown）。本機有未上傳修改且雲端被別台改過時會詢問，選用雲端前自動下載備份。記帳沿用自己的 `HUI_LEDGER_META_V1` 機制。
+   - JSON 備份（combined_v1）新增 `ledgerData`、`retirementData`、`overviewMonthly`；清空重置會清這些並可選擇連雲端（含 `ledger`）一起清。復原對帳單匯入的記帳部分改為只還原該次匯入的變動（`lgUndoImportChanges`）。
 2. **密碼鎖定、子分頁隱藏**：設定選單和設定視窗拿掉；程式裡上百處檢查改用 shared.js 的「永遠不鎖」替身（isPageLocked、isFieldLocked、isTabHidden、lockPlaceholderHtml），這樣其他檔案跟 All-MoneyBook 幾乎一樣，以後同步比較容易。
 3. **媽的永豐拿掉**：stock-yf.js 刪除；它裡面的共用日期工具改放 scripts/date-utils.js，名稱改成 parseRocDateInt、autoSortByDate（All-MoneyBook 叫 yfParseDateInt、yfAutoSortByDate，以後同步時要記得改名）。股票分頁、手機分區列、Excel 匯出入、JSON 備份、資產總覽、小提醒卡片的永豐部分都拿掉。
    - **刻意保留、不是漏刪（2026-10-19 檢查確認）**：`scripts/stmt-import.js` 裡還有永豐金證券寫進「媽的永豐」的程式（`stmtUseYf`、`stmtBuildYfItems`、`yfBuy`／`yfAppCost` 項目、`yfAutoSortByDate`），以及 `stock-add.js` 的 `YONG_FENG_TAB`、各 CSS 裡的 `yf-*` 樣式。這些是跟 All-MoneyBook 共用的檔案：`stmtUseYf()` 會檢查有沒有 `yfDetail`／`yfOverview`，huimoney 沒有，所以永遠回傳 false，永豐金證券的對帳單就自動當一般券商處理（寫進股票買進）。**這段程式在 huimoney 不會執行、不會報錯**，留著是為了之後跟 All-MoneyBook 同步時差異最小。
@@ -30,7 +32,7 @@
 - 預留欄位（第 1 批未使用）：支出 `payMethod`、`fund`、`source`；收入 `source`。
 - 特殊分類：`卡費`、`共同基金`（可改名、不可刪）。
 - **記帳不會從股票分頁自動連動**：股票分頁的已實現損益、股利、借券收入不會自己寫進記帳。**但「銀行對帳單比對」（第 4 批）會寫**：交割款記成分類「股票交割」的支出（買進）或收入（賣出入帳）、股息記成收入「股利」、借券費記成收入「借券收入」，已實現損益不進記帳。
-  - ⚠️ 現況注意：記帳的月支出／月收入統計只排除「卡費」和共同基金，**沒有排除「股票交割」**，所以買一筆大額股票，當月個人支出會跟著變大。這一點還沒有決定怎麼處理。
+  - ⚠️ 現況注意：記帳的月支出／月收入統計只排除「卡費」和共同基金，**沒有排除「股票交割」**，所以買一筆大額股票，當月個人支出會跟著變大。**2026-10-19 Ben 決定：不排除，維持現狀。**
 - 沒搬：媽媽分類、Gemini AI、統計密碼鎖、Firebase 登入畫面、華語文教學自動同步、moneybook 任何資料。
 - 後續計畫：第 2 批共同基金分頁（基金為虛擬帳戶，不出現在財務總覽／資產總覽）；第 3 批圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
 

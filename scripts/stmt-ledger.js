@@ -333,6 +333,23 @@ function lgRestoreSnapshot(snap) {
   if (typeof lgOnDataReplaced === 'function') lgOnDataReplaced();
   if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();
 }
+// 復原一次對帳單匯入：只動這次匯入造成的記帳變動，匯入之後手動記的帳不受影響。
+// snap＝匯入前的記帳資料。做法：現在有、匯入前沒有、而且來源是「對帳單」的紀錄 → 拿掉；
+// 匯入前就有的紀錄，如果「對帳單核對記號」跟匯入前不一樣 → 還原成匯入前的樣子。
+function lgUndoImportChanges(snap) {
+  const before = lgNormalize(snap);
+  ['expenses', 'incomes'].forEach(k => {
+    const old = new Map(before[k].map(e => [e.id, e]));
+    lg[k] = lg[k].filter(e => old.has(e.id) || e.source !== 'statement');
+    lg[k].forEach(e => {
+      const o = old.get(e.id);
+      if (o && JSON.stringify(e.stmt || null) !== JSON.stringify(o.stmt || null)) e.stmt = o.stmt || null;
+    });
+  });
+  lgSave();
+  if (typeof lgOnDataReplaced === 'function') lgOnDataReplaced();
+  if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();
+}
 function lgAfterStmtApply() {
   if (typeof lgIsVisible === 'function' && lgIsVisible()) renderLedger();
   if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();

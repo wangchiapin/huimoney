@@ -151,6 +151,7 @@ function lgLoadMeta() {
 }
 function lgSaveMeta(m) {
   try { localStorage.setItem(LG_META_KEY, JSON.stringify(m)); } catch (e) { /* 略過 */ }
+  try { if (typeof cloudStatusMap !== 'undefined' && Object.keys(cloudStatusMap).length) cloudStatusRender(); } catch (e) { /* 略過 */ }
 }
 
 let lg = lgLoadLocal();   // 目前的整份記帳資料
@@ -534,6 +535,7 @@ async function lgLoadFromCloud() {
     if (!snap.exists) {
       if (!lgIsEmpty()) await lgForcePush();
       lgCloudReady = true;
+      lgStatus('ok');
       return;
     }
     const cloud = snap.data() || {};
@@ -548,6 +550,7 @@ async function lgLoadFromCloud() {
       await lgResolveConflict(cloud);
     }
     lgCloudReady = true;
+    lgStatus('ok');
   } catch (e) {
     console.warn('讀取記帳雲端資料失敗', e);
     lgReportCloudError(e);
@@ -566,6 +569,7 @@ async function lgPushToCloud() {
       const cloudAt = String((snap.data() || {}).updatedAt || '');
       if (cloudAt && cloudAt !== meta.lastSynced && cloudAt !== lg.updatedAt) {
         await lgResolveConflict(snap.data());
+        lgStatus('ok');
         return;
       }
     }
@@ -573,6 +577,7 @@ async function lgPushToCloud() {
     await ref.set(payload);
     const stillDirty = lg.updatedAt !== payload.updatedAt;
     lgSaveMeta({ lastSynced: payload.updatedAt, dirty: stillDirty });
+    lgStatus('ok');
     if (stillDirty) lgScheduleCloudSave();
   } catch (e) {
     console.warn('記帳雲端同步失敗', e);
@@ -581,7 +586,12 @@ async function lgPushToCloud() {
     lgPushing = false;
   }
 }
+// 回報標題列的雲端狀態（cloud-guard.js）
+function lgStatus(state, detail) {
+  if (typeof cloudStatusSet === 'function') cloudStatusSet('ledger', '記帳', state, detail);
+}
 function lgReportCloudError(e) {
+  lgStatus('fail', typeof cloudStatusErrText === 'function' ? cloudStatusErrText(e) : String(e && e.message || e));
   const hint = (e && e.code === 'permission-denied') ? '（Firebase 規則還沒開放 ledger，請看 HANDOFF.md）' : '';
   lgToast('⚠️ 記帳雲端同步失敗' + hint + '，資料已存在這台裝置', 'error');
 }

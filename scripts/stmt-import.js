@@ -1347,10 +1347,10 @@
       let backup = window.__stmtLastBackup;
       if (!backup) { try { backup = JSON.parse(localStorage.getItem(STMT_BACKUP_KEY) || 'null'); } catch (e) { backup = null; } }
       if (!backup) { showToast('找不到上一次匯入前的備份', 'error'); return; }
-      if (!confirm('確定要復原嗎？股票管理和財務總覽會回到這次匯入前的樣子（匯入之後你自己改的也會一起不見）。')) return;
+      if (!confirm('確定要復原嗎？\n\n・股票管理和財務總覽：會回到這次匯入前的樣子（匯入之後你自己改的會一起不見）。\n・記帳：只拿掉這次匯入新增的紀錄、並取消這次的「已和銀行核對」記號；匯入之後你自己記的帳不會動。')) return;
       applyAllData(backup.stock);
       saveToStorage();
-      if (backup.lg && typeof lgRestoreSnapshot === 'function') lgRestoreSnapshot(backup.lg);
+      if (backup.lg && typeof lgUndoImportChanges === 'function') lgUndoImportChanges(backup.lg);
       if (backup.ret && typeof retirementSettings !== 'undefined') { retirementSettings = backup.ret; saveRetirementSettings(); if (typeof renderRetirementIfVisible === 'function') renderRetirementIfVisible(); }
       if (backup.finance) { state = backup.finance; saveState(); if (typeof render === 'function') render(); }
       window.__stmtLastBackup = null;
