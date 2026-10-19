@@ -54,6 +54,14 @@
 - **第 B 步（還沒做）**：信用卡對帳單解析並和 `payMethod` 為信用卡的紀錄配對；需要 Ben 提供範例 PDF，且要改 All-MoneyBook 共用的 stmt-parsers.js。
 - 測試：test-stmt.js(26)、test-pay.js(5)，加上原有四組全過。
 
+## 第 4 批延伸：新銀行、關鍵字、OCR、退撫儲金（2026-10-19）
+- **解析檔在 All-MoneyBook**（`scripts/stmt-parsers.js`，huimoney 直接載入網站上的那份）：新增 `bot_bank` 台灣銀行、`kaohsiung_bank` 高雄銀行、`pension_fund` 公教退撫儲金；修將來銀行（定存口袋、活存口袋讀成帳戶）和中信（帳號印在每筆明細前面時漏讀第一筆）。
+- **OCR**：圖片型 PDF（`isImageOnly`）才會載入 tesseract.js 5.1.1＋chi_tra（`@tesseract.js-data/chi_tra/4.0.0_best_int`，約 1.6 MB 資料＋程式，jsdelivr）。每頁畫成 300dpi 圖 → 單字座標整理成跟一般 PDF 一樣的格子（`ocrWordsToPage`）。OCR 讀的對帳單一定要自我檢查全過才算通過；高雄銀行帳號 OCR 讀不準，改用順序代號（活存1、定存1…）。
+- **分類關鍵字**：`BANK_KEYWORDS`（股息／權益補償／借券／交割各家寫法，集中在解析檔，缺的直接補）；huimoney 確認畫面可「記住關鍵字」（`stmtSettings.ledgerKeywords`，會同步），看不出類別的銀行明細放「需要你看」。
+- **退撫儲金**：`scripts/stmt-pension.js`（huimoney、All-MoneyBook 各一份，內容相同）：帳戶價值寫進退休試算某個專戶的餘額（萬）和／或財務總覽某個項目；All-MoneyBook 沒有退休試算，只寫財務總覽。對應存在 `stmtSettings.accountMap['pension_fund|公教人員專戶']`。復原一起還原退休試算。
+- 測試：test-stmt2（五份真實 PDF 含 OCR 全流程）、test-stmt3（關鍵字）、test-am（All-MoneyBook）。測試時要把 pdf.js 換成 legacy 版（沙盒 Chromium 太舊）。
+- 還沒做：信用卡對帳單（需要信用卡 PDF 範例）。
+
 ## 還沒確認
 - 上線後到 Actions 手動跑一次「每日更新收盤價」，確認美股與匯率有抓到。
 - 上櫃股票價格欄位名稱（新抓價程式用 SecuritiesCompanyCode／Close，跟 All-MoneyBook 一樣）。

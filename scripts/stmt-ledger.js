@@ -28,20 +28,31 @@ function stmtLgBankPayMethod() {
 }
 
 // 一筆銀行明細 → { dir:'in'|'out', kind:'expense'|'income', category, item, tag }
+// 你教過的關鍵字：[{ kw, kind:'income'|'expense', cat }]，字比較長的先比
+function stmtLgUserKeywords() {
+  const s = stmtSettingsObj();
+  if (!Array.isArray(s.ledgerKeywords)) s.ledgerKeywords = [];
+  return s.ledgerKeywords;
+}
+function stmtLgUserMatch(desc, kind) {
+  return stmtLgUserKeywords().filter(k => k.kind === kind && k.kw && desc.includes(k.kw)).sort((a, b) => b.kw.length - a.kw.length)[0] || null;
+}
 function stmtLgClassify(t) {
   const amt = Number(t.amount) || 0;
   const dir = amt > 0 ? 'in' : 'out';
   const desc = String(t.desc || '').replace(/\s+/g, ' ').trim();
-  let category = '', tag = '';
-  if (t.category === 'securitiesSettlement') { category = STMT_LG_SETTLE; tag = '股票交割'; }
+  let category = '', tag = '', known = true;
+  const taught = stmtLgUserMatch(desc, dir === 'in' ? 'income' : 'expense');
+  if (taught) { category = taught.cat; tag = '你教過的關鍵字'; }
+  else if (t.category === 'securitiesSettlement') { category = STMT_LG_SETTLE; tag = '股票交割'; }
   else if (t.category === 'cashDividend') { category = '股利'; tag = '現金股息'; }
   else if (t.category === 'compensationRef') { category = '股利'; tag = '權益息'; }
   else if (t.category === 'lendingFeeRef') { category = '借券收入'; tag = '借券費'; }
   else if (dir === 'out' && /卡費|信用卡|卡款/.test(desc)) { category = LG_CARD_FEE_ID; tag = '繳卡費'; }
   else if (dir === 'in' && /薪/.test(desc)) { category = '薪資收入'; }
-  else if (dir === 'out') { category = lgGuessCategory(desc) || '其他'; }
-  else { category = '其他'; }
-  return { dir, kind: dir === 'in' ? 'income' : 'expense', category, item: desc || (dir === 'in' ? '存入' : '提出'), tag };
+  else if (dir === 'out' && lgGuessCategory(desc)) { category = lgGuessCategory(desc); }
+  else { category = '其他'; known = false; }
+  return { dir, kind: dir === 'in' ? 'income' : 'expense', category, item: desc || (dir === 'in' ? '存入' : '提出'), tag, known };
 }
 
 // 手動紀錄裡，哪些可以和這筆銀行明細比對
@@ -116,7 +127,7 @@ function stmtLgBuildItems(results, imported) {
   const payMethod = stmtLgBankPayMethod();
   txs.forEach((x, xi) => {
     const m = matchOf[xi];
-    const data = { date: x.t.date, item: x.item, amount: Math.abs(x.t.amount), category: x.category, dir: x.dir, kind: x.kind, payMethod: x.kind === 'expense' ? payMethod : '', key: x.key, tag: x.tag, acc: String(x.t.accountNo || '').slice(-4) };
+    const data = { date: x.t.date, item: x.item, amount: Math.abs(x.t.amount), category: x.category, dir: x.dir, kind: x.kind, payMethod: x.kind === 'expense' ? payMethod : '', key: x.key, tag: x.tag, known: x.known, desc: x.t.desc || '', acc: String(x.t.accountNo || '').slice(-4) };
     const it = stmtItem(Object.assign({}, x.base, {
       type: 'ledgerTx', date: x.t.date, data,
       edit: [['item', '項目', 'text'], ['amount', '金額'], ['date', '日期 (YYYY-MM-DD)', 'text']]
@@ -133,6 +144,9 @@ function stmtLgBuildItems(results, imported) {
       const o = transfer[xi];
       it.group = 'review'; it.checked = false;
       it.note = `可能是自己帳戶之間的轉帳（另一邊：${stmtRoc(o.t.date)} ${o.res.label} …${String(o.t.accountNo || '').slice(-4)} ${o.dir === 'in' ? '存入' : '提出'}）。兩邊都不要記就不用勾。`;
+    } else if (!x.known) {
+      it.group = 'review'; it.checked = false;
+      it.note = '看不出這是哪一類（還沒有符合的關鍵字）。請選分類後勾起來；可以按「記住關鍵字」，下次自動認。';
     } else {
       it.group = 'add'; it.checked = true;
     }
@@ -178,6 +192,8 @@ function stmtLgExtraHtml(it) {
         </select>
       </label>
       <label>項目 <input type="text" value="${stmtEsc(d.item)}" onchange="stmtEditField(${it.id}, 'item', this.value, 'text')" /></label>
+      <label>記住關鍵字 <input type="text" id="stmtKw${it.id}" value="${stmtEsc(stmtLgKwGuess(d.desc))}" placeholder="例如：配息" /></label>
+      <button type="button" class="stmt-edit-btn" onclick="stmtLgTeach(${it.id})">以後看到這個字，都記成「${stmtEsc(stmtLgCatName(d.kind, d.category))}」</button>
     </div>`;
 }
 function stmtLgSetCat(id, v) { const it = stmtFind(id); if (it) it.data.category = v; }
@@ -225,4 +241,34 @@ function lgRestoreSnapshot(snap) {
 function lgAfterStmtApply() {
   if (typeof lgIsVisible === 'function' && lgIsVisible()) renderLedger();
   if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();
+}
+
+/* ---------- 教它關鍵字：記在設定裡，會跟著雲端同步 ---------- */
+function stmtLgKwGuess(desc) {
+  // 去掉數字、日期、符號，留下第一段中文字當建議
+  const m = String(desc || '').replace(/[0-9A-Za-z*\/\-_.,:：()（）\s]+/g, ' ').trim().split(' ')[0] || '';
+  return m.slice(0, 6);
+}
+function stmtLgTeach(id) {
+  const it = stmtFind(id);
+  const input = document.getElementById('stmtKw' + id);
+  if (!it || !input) return;
+  const kw = input.value.trim();
+  if (!kw) { showToast('請先填關鍵字', 'error'); return; }
+  const kind = it.data.kind;
+  const list = stmtLgUserKeywords();
+  const old = list.find(k => k.kw === kw && k.kind === kind);
+  if (old) old.cat = it.data.category; else list.push({ kw, kind, cat: it.data.category });
+  showToast(`記住了：看到「${kw}」記成「${stmtLgCatName(kind, it.data.category)}」`);
+  stmtAfterSetting();
+}
+function stmtLgDelKw(i) {
+  const list = stmtLgUserKeywords();
+  if (!confirm('確定要刪掉這個關鍵字嗎？')) return;
+  list.splice(i, 1);
+  stmtAfterSetting();
+}
+// 「管理所有記住的設定」裡的一段
+function stmtLgManageRows() {
+  return stmtLgUserKeywords().map((k, i) => `<div class="stmt-set-row"><span>看到「${stmtEsc(k.kw)}」（${k.kind === 'income' ? '存入' : '提出'}）→ 記成「${stmtEsc(stmtLgCatName(k.kind, k.cat))}」</span><span class="stmt-set-ctl"><button type="button" class="stmt-del-btn" onclick="stmtLgDelKw(${i})">刪除</button></span></div>`);
 }
