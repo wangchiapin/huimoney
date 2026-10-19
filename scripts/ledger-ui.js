@@ -6,7 +6,7 @@
    ==================================================================== */
 
 let lgViewMonth = lgMonthKeyOf(lgTodayISO());
-let lgSubTab = 'ledger';          // 'ledger' | 'stats'
+let lgSubTab = 'ledger';          // 'ledger' | 'stats' | 'charts' | 'search'
 let lgConfirmKey = '';            // 正在確認刪除的那一筆，例如 'expense:abc123'
 let lgConfirmTimer = null;
 let lgStatsExpandedMonth = '';
@@ -40,7 +40,11 @@ function lgOnDataReplaced() { if (lgIsVisible()) renderLedger(); }
 function renderLedger() {
   const root = document.getElementById('ledgerContent');
   if (!root) return;
-  root.innerHTML = lgHeaderHtml() + (lgSubTab === 'stats' ? lgStatsHtml() : lgMainHtml());
+  const body = lgSubTab === 'stats' ? lgStatsHtml()
+    : lgSubTab === 'charts' ? lgChartsHtml()
+    : lgSubTab === 'search' ? lgSearchHtml()
+    : lgMainHtml();
+  root.innerHTML = lgHeaderHtml() + body;
 }
 
 function lgHeaderHtml() {
@@ -57,8 +61,13 @@ function lgHeaderHtml() {
       <div class="lg-subtabs">
         <button type="button" class="${lgSubTab === 'ledger' ? 'active' : ''}" onclick="lgSetSubTab('ledger')">📒 記帳</button>
         <button type="button" class="${lgSubTab === 'stats' ? 'active' : ''}" onclick="lgSetSubTab('stats')">📊 統計</button>
+        <button type="button" class="${lgSubTab === 'charts' ? 'active' : ''}" onclick="lgSetSubTab('charts')">📈 圖表</button>
+        <button type="button" class="${lgSubTab === 'search' ? 'active' : ''}" onclick="lgSetSubTab('search')">🔎 搜尋</button>
       </div>
-      <button type="button" class="btn btn-outline lg-settings-btn" onclick="lgOpenSettings()">⚙️ 設定</button>
+      <div class="lg-top-btns">
+        <button type="button" class="btn btn-outline" onclick="lgOpenQuickNote()">📝 隨手記</button>
+        <button type="button" class="btn btn-outline" onclick="lgOpenSettings()">⚙️ 設定</button>
+      </div>
     </div>`;
 }
 
@@ -524,6 +533,10 @@ function lgBackupHtml() {
     <button type="button" class="btn btn-primary lg-wide" onclick="lgExportJson()">⬇️ 匯出記帳備份（.json）</button>
     <input type="file" id="lgImportFile" accept=".json,application/json" style="display:none" onchange="lgOnImportFile(this)">
     <button type="button" class="btn btn-outline lg-wide" onclick="document.getElementById('lgImportFile').click()">⬆️ 匯入記帳備份</button>
+    <div class="lg-hint" style="margin-top:14px">Excel：一個檔案四張表（支出、收入、共同基金、月備註），可以用 Excel 開來看或整理。匯入時一樣不會重複加。</div>
+    <button type="button" class="btn btn-primary lg-wide" onclick="lgExportXlsx()">📊 匯出 Excel（.xlsx）</button>
+    <input type="file" id="lgImportXlsx" accept=".xlsx" style="display:none" onchange="lgOnImportXlsx(this)">
+    <button type="button" class="btn btn-outline lg-wide" onclick="document.getElementById('lgImportXlsx').click()">📊 匯入 Excel</button>
     <div class="lg-danger">
       <div class="lg-hint">⚠️ 危險區域</div>
       <button type="button" class="btn btn-outline lg-wide lg-danger-btn ${lgClearArmed ? 'armed' : ''}" onclick="lgOnClear()">${lgClearArmed ? '再按一次確定清空所有紀錄' : '清空所有記帳紀錄（分類設定保留）'}</button>
@@ -541,6 +554,15 @@ function lgOnImportFile(inp) {
   };
   reader.readAsText(f);
   inp.value = '';
+}
+async function lgOnImportXlsx(inp) {
+  const f = inp.files && inp.files[0];
+  inp.value = '';
+  if (!f) return;
+  const res = await lgImportXlsxFile(f);
+  if (!res) return;
+  alert(`Excel 匯入完成！\n新增支出 ${res.expenses} 筆、收入 ${res.incomes} 筆、基金紀錄 ${res.fundTxns} 筆、備註 ${res.notes} 則、分類 ${res.categories} 個\n已經有的 ${res.duplicates} 筆沒有重複加${res.bad || res.skipped ? `\n有 ${res.bad + res.skipped} 列日期或金額看不懂，已略過` : ''}`);
+  lgRenderSettings();
 }
 function lgOnClear() {
   if (!lgClearArmed) {

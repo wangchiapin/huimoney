@@ -22,7 +22,7 @@
 - 檔案：`scripts/ledger.js`（資料層＋雲端同步）、`scripts/ledger-ui.js`（畫面）、`styles/ledger.css`；index.html、shared.js（switchAppView）、stock.js（nav state）有小改。
 - 本機儲存：`HUI_LEDGER_V1`（整包）、`HUI_LEDGER_META_V1`（lastSynced/dirty）、`HUI_LEDGER_PRE_SYNC_BACKUP_V1`（採用雲端前的本機備份）。
 - 雲端：Firestore 集合 `ledger`，文件 id = uid；改動後 3 秒 debounce 上傳；兩邊都有新變更時跳確認。第 2 批共同基金也會放在同一份文件。
-- Firebase 規則需在 huy-money 專案手動發布：`match /ledger/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }`
+- Firebase 規則（huy-money 專案，需手動發布）：現有的 `match /{col}/{uid}` 白名單要加上 `'ledger'`，即 `col in ['financeAssets','stockAssets','insuranceAssets','overviewMonthly','ledger']`。
 - 預留欄位（第 1 批未使用）：支出 `payMethod`、`fund`、`source`；收入 `source`。
 - 特殊分類：`卡費`、`共同基金`（可改名、不可刪）。
 - **記帳不自動連動股票**：股票已實現損益、股利、借券收入都不寫進記帳；股票相關金錢之後只會透過銀行對帳單交割款進來。
@@ -36,6 +36,14 @@
 - 算法：實際餘額＝匯入＋期初－基金直接付－結算領出；欠某人＝他先墊－他已結算（不小於 0，各算各的）；可用＝餘額－欠老婆－欠老公。
 - 基金不出現在財務總覽／資產總覽；手機底部 7 個分頁可左右滑。
 - 後續：第 3 批 圖表、搜尋、隨手記、Excel 匯出入；再之後付款方式與對帳單比對。
+
+## 2026-10-19 記帳第 3 批：圖表、搜尋、隨手記、Excel（只有 huimoney 有）
+- 新檔：`scripts/ledger-charts.js`（圖表，手寫 SVG／HTML，不靠 Chart.js；支出 #b5424d、收入 #3a74b0 通過色盲檢查）、`ledger-search.js`、`ledger-quicknote.js`、`ledger-excel.js`（用 index.html 已載入的 ExcelJS）。
+- 記帳子分頁現在是 記帳／統計／圖表／搜尋；頁首有 📝 隨手記、⚙️ 設定。
+- 隨手記草稿存在 `lg.quickNoteDraft`（跟雲端同步）；加入的支出 `source:'quicknote'`；格式 `0913 早餐 500 午餐300`，沒日期的行不猜。
+- Excel 匯出四張表：支出、收入、共同基金、月備註（每筆有「編號」）。匯入有編號比編號、沒編號比「日期＋分類＋項目＋金額」，重複的略過；不存在的分類自動新增；看不懂的列略過並回報。
+- 測試時 Chart.js／ExcelJS 都從 CDN 載入，沙盒連不到，測試改用本機 ExcelJS 套件攔截。
+- 未做：基金分頁的圖表、金額欄算式（moneybook 有「=100-10」）、付款方式與對帳單比對。
 
 ## 還沒確認
 - 上線後到 Actions 手動跑一次「每日更新收盤價」，確認美股與匯率有抓到。

@@ -173,3 +173,55 @@
 .lg-seg button.active { background: #f8d7ae; border-color: #e3b98a; font-weight: 700; }
 .lg-fund-hint { font-size: 0.76rem; color: #98806a; background: #f8efde; border-radius: 10px; padding: 7px 10px; margin-top: 8px; line-height: 1.5; }
 #fundView .lg-list { max-height: none; }
+
+
+/* ---------- 第3批：子分頁、隨手記、圖表、搜尋 ---------- */
+#ledgerView .lg-top-btns { margin-left: auto; display: flex; gap: 8px; }
+#ledgerView .lg-subtabs button { padding: 8px 14px; }
+#ledgerView .lg-qn-text, .lg-overlay .lg-qn-text { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, monospace; resize: vertical; margin-top: 8px; }
+.lg-qn-card { background: #fff; border: 1px solid var(--border-color, #ecd8bc); border-radius: 12px; padding: 8px; margin-top: 8px; }
+.lg-qn-card.bad { background: #fbe4e1; }
+.lg-qn-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.lg-qn-row:last-child { margin-bottom: 0; }
+.lg-qn-row .lg-input { min-width: 0; }
+.lg-qn-unres { background: #f3ecda; border-radius: 12px; padding: 10px 12px; font-size: 0.82rem; color: #5c5343; line-height: 1.8; }
+.lg-qn-msg { margin-top: 12px; color: #4a8a5a; font-size: 0.85rem; font-weight: 600; }
+
+#ledgerView .lg-charts { display: flex; flex-direction: column; gap: 14px; }
+#ledgerView .lg-ch-svg { max-width: 100%; height: auto; display: block; touch-action: pan-y; }
+#ledgerView .lg-ch-grid { stroke: #ecd8bc; stroke-width: 1; }
+#ledgerView .lg-ch-ytick, #ledgerView .lg-ch-xtick { fill: #98806a; font-size: 11px; }
+#ledgerView .lg-ch-mark { stroke: var(--card-bg, #fcf4e8); stroke-width: 2; }
+#ledgerView .lg-ch-cross { stroke: #98806a; stroke-width: 1; opacity: 0; pointer-events: none; }
+#ledgerView .lg-ch-hit:hover .lg-ch-cross { opacity: 0.5; }
+#ledgerView .lg-ch-legend { display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-main); margin-bottom: 4px; }
+#ledgerView .lg-ch-sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+#ledgerView .lg-ch-sw.sq { border-radius: 2px; }
+#ledgerView .lg-ch-table { margin-top: 10px; font-size: 0.82rem; }
+#ledgerView .lg-ch-table summary { cursor: pointer; color: var(--text-muted); }
+#ledgerView .lg-input.lg-year-select { width: auto; flex: none; }
+#ledgerView .lg-bars { display: flex; flex-direction: column; gap: 6px; }
+#ledgerView .lg-bar-row { display: grid; grid-template-columns: 84px 1fr 78px; align-items: center; gap: 10px; font-size: 0.86rem; padding: 2px 0; }
+#ledgerView .lg-bar-name { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#ledgerView .lg-bar-track { height: 14px; background: #f3e7d1; border-radius: 4px; overflow: hidden; }
+#ledgerView .lg-bar-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; min-width: 3px; }
+#ledgerView .lg-bar-val { text-align: right; font-variant-numeric: tabular-nums; }
+#lgTip { position: fixed; z-index: 4000; display: none; pointer-events: none; background: #5b4333; color: #fff; border-radius: 10px; padding: 7px 10px; font-size: 0.78rem; line-height: 1.5; box-shadow: 0 4px 14px rgba(60,40,20,0.3); }
+#lgTip b { display: block; margin-bottom: 1px; }
+
+#ledgerView .lg-search-box { margin-bottom: 12px; }
+#ledgerView .lg-srch-kinds { margin: 10px 0; }
+#ledgerView .lg-srch-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+#ledgerView .lg-srch-grid > label { min-width: 0; }
+#ledgerView .lg-srch-grid .lg-input { width: 100%; min-width: 0; box-sizing: border-box; }
+#ledgerView .lg-srch-grid label { font-size: 0.74rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 3px; }
+#ledgerView .lg-search-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 2px 10px; font-size: 0.88rem; }
+#ledgerView .lg-search-sum + .lg-card, #ledgerView .lg-card + .lg-card { margin-top: 12px; }
+@media (max-width: 760px) {
+  #ledgerView .lg-top-btns { margin-left: 0; flex: 1 1 100%; }
+  #ledgerView .lg-top-btns .btn { flex: 1; }
+  #ledgerView .lg-subtabs { flex: 1 1 100%; overflow-x: auto; scrollbar-width: none; }
+  #ledgerView .lg-subtabs button { flex: 1 0 auto; padding: 8px 10px; font-size: 0.82rem; white-space: nowrap; }
+  #ledgerView .lg-srch-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  #ledgerView .lg-bar-row { grid-template-columns: 70px 1fr 64px; gap: 6px; font-size: 0.8rem; }
+}

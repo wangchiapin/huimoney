@@ -110,6 +110,7 @@ function lgNormalize(d) {
     categories: cats.length ? cats : lgClone(LG_DEFAULT_CATEGORIES),
     incomeCategories: incCats.length ? incCats : lgClone(LG_DEFAULT_INCOME_CATEGORIES),
     monthlyNotes: arr(d.monthlyNotes).filter(n => n && n.id && n.month && typeof n.text === 'string').map(n => ({ id: String(n.id), month: String(n.month), text: n.text, createdAt: Number(n.createdAt) || 0 })),
+    quickNoteDraft: typeof d.quickNoteDraft === 'string' ? d.quickNoteDraft : '',
     fundTxns: arr(d.fundTxns).filter(t => t && t.id && isDate(t.date)).map(lgNormFundTxn),
     updatedAt: typeof d.updatedAt === 'string' ? d.updatedAt : ''
   };
@@ -312,6 +313,54 @@ function lgUpdateFundTxn(id, patch) {
 function lgDeleteFundTxn(id) {
   lg.fundTxns = lg.fundTxns.filter(t => t.id !== id);
   lgSave();
+}
+
+/* ---------------- 隨手記草稿（跟著雲端同步，換裝置也看得到） ---------------- */
+function lgSetQuickDraft(text) {
+  const t = String(text || '');
+  if (t === lg.quickNoteDraft) return;
+  lg.quickNoteDraft = t;
+  lgSave();
+}
+
+/* ---------------- 一批紀錄匯入（Excel 用）：已經有的不重複加 ----------------
+   rec = { expenses, incomes, fundTxns, notes }，每筆可以有 id（編號）也可以沒有。
+   有編號 → 看編號有沒有重複；沒編號（自己手打的 Excel）→ 看「日期＋分類＋項目＋金額」有沒有重複。 */
+function lgCatIdByName(kind, name) {
+  const n = String(name || '').trim();
+  const c = lgCatList(kind).find(x => x.name === n) || lgCatList(kind).find(x => x.id === n);
+  return c ? c.id : n;
+}
+function lgImportRecords(rec) {
+  rec = rec || {};
+  const res = { expenses: 0, incomes: 0, notes: 0, fundTxns: 0, categories: 0, duplicates: 0, skipped: 0 };
+  const sigE = e => [e.date, e.category, e.item, Number(e.price) || 0].join('|');
+  const sigI = i => [i.date, i.category, i.item, Number(i.amount) || 0].join('|');
+  const sigF = t => [t.date, t.kind, t.who, t.item, Number(t.amount) || 0, t.from].join('|');
+  const sigN = n => n.month + '|' + n.text;
+  const plan = (rows, have, haveSig, sig, normOne, push) => {
+    (rows || []).forEach(r => {
+      const hadId = r.id !== undefined && r.id !== null && String(r.id).trim() !== '';
+      const row = Object.assign({}, r, { id: hadId ? String(r.id).trim() : lgGenId() });
+      const n = normOne(row);
+      if (!n) { res.skipped++; return; }
+      if (hadId ? have.has(n.id) : haveSig.has(sig(n))) { res.duplicates++; return; }
+      have.add(n.id); haveSig.add(sig(n));
+      push(n);
+    });
+  };
+  const oneE = r => (lgNormalize({ expenses: [r] }).expenses[0] || null);
+  const oneI = r => (lgNormalize({ incomes: [r] }).incomes[0] || null);
+  const oneF = r => (lgNormalize({ fundTxns: [r] }).fundTxns[0] || null);
+  const oneN = r => (r.month && String(r.text || '').trim() ? { id: r.id, month: String(r.month), text: String(r.text).trim(), createdAt: Date.now() } : null);
+  plan(rec.expenses, new Set(lg.expenses.map(e => e.id)), new Set(lg.expenses.map(sigE)), sigE, oneE, n => { lg.expenses.push(n); res.expenses++; });
+  plan(rec.incomes, new Set(lg.incomes.map(i => i.id)), new Set(lg.incomes.map(sigI)), sigI, oneI, n => { lg.incomes.push(n); res.incomes++; });
+  plan(rec.fundTxns, new Set(lg.fundTxns.map(t => t.id)), new Set(lg.fundTxns.map(sigF)), sigF, oneF, n => { lg.fundTxns.push(n); res.fundTxns++; });
+  plan(rec.notes, new Set(lg.monthlyNotes.map(n => n.id)), new Set(lg.monthlyNotes.map(sigN)), sigN, oneN, n => { lg.monthlyNotes.push(n); res.notes++; });
+  lg.expenses.forEach(e => { if (e.category && !lg.categories.some(c => c.id === e.category)) { lg.categories.push({ id: e.category, name: e.category, color: '#8C8474' }); res.categories++; } });
+  lg.incomes.forEach(i => { if (i.category && !lg.incomeCategories.some(c => c.id === i.category)) { lg.incomeCategories.push({ id: i.category, name: i.category, color: '#8C8474' }); res.categories++; } });
+  lgSave();
+  return res;
 }
 
 /* ---------------- 備份（JSON）：匯出整份、匯入時合併（已有的 id 不會重複加） ---------------- */
