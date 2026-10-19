@@ -24,6 +24,18 @@
 7. **保留 huimoney 自己的東西**：退休試算分頁（含手機底部分頁、重新整理後回到退休頁）、「含借出股數」預設勾選、新使用者預設只有「證券帳戶」且可刪（固定保留「美股複委託」）。
 8. 手機版退休試算的設定區改成一欄（styles/retirement.css 最後一行）。
 
+## 瀏覽器儲存名稱加前綴（2026-10-19）
+- **問題**：huimoney 和 All-MoneyBook 都在 `wangchiapin.github.io` 底下，瀏覽器的 localStorage 是整個網域共用；兩邊財務總覽、股票、保險、對帳單設定等名稱一模一樣。同一個瀏覽器開兩個網站會互相讀到、甚至登入雲端時把對方資料上傳（雲端沒資料時會把本機資料第一次推上去）。
+- **做法**：新檔 `scripts/storage-prefix.js`，在 index.html **所有 script 之前**載入，把 `localStorage.getItem／setItem／removeItem` 包起來，名稱自動加 `HUI_`。其他程式檔一行都沒改。已經是 `HUI_` 開頭的（記帳、貓咪）、Firebase 登入自己用的（`firebase` 開頭、`__` 開頭）不加。
+- **搬家（只跑一次，記在 `HUI_PREFIX_MIGRATED_V1`）**：第一次開新版時，把舊名稱的資料**複製**到新名稱（舊的不刪、新名稱已有資料的不蓋）。
+  - 只搬 huimoney 用到的 31 個名稱（清單在檔案裡的 `MIGRATE_KEYS`），同網域其他網站的資料不碰。
+  - 只有確認這個瀏覽器「用過 huimoney」才搬（有 huimoney 才會寫的名稱，`HUI_ONLY_MARKERS`：記帳、退休試算、新版匯率日期…）；只開過 All-MoneyBook 的瀏覽器不搬，避免把 All-MoneyBook 的資料帶進來。
+  - 已知限制：如果一個瀏覽器兩個網站都用過，舊名稱裡是兩邊混在一起的資料，搬家會把混合資料帶進來（無法分辨）。登入雲端會用雲端資料取代；舊名稱沒有刪，所以沒有資料遺失。
+- **舊名稱沒有刪**：搬家後舊名稱的資料還在瀏覽器裡（沒用了，但「清空重置」不會清它們）。如果這個瀏覽器之後會開 All-MoneyBook，舊名稱就是它的名稱，會讀到這份舊資料；確認 huimoney 正常之後可以清掉。
+- **之後新增儲存名稱**：不用改這支檔案，新名稱自動加前綴（`MIGRATE_KEYS` 只管舊資料搬家）。
+- **跟 All-MoneyBook 同步時**：All-MoneyBook 的 scripts 直接複製進來就好，名稱不用改；只要確認 index.html 第一支 script 還是 `storage-prefix.js`。
+- 測試：無頭瀏覽器實測 36 項（舊版→新版搬家、其他網站與 firebase 名稱不動、新版存檔不碰舊名稱、只開過 All-MoneyBook 的瀏覽器不搬、清空重置、備份匯出→重置→匯入、新版沒有多出錯誤）；對照組（前綴程式換成空的）會有 12 項失敗，確認測試有效。
+
 ## 2026-10-19 新增 📒 記帳分頁（第 1 批，僅 huimoney 有，All-MoneyBook 沒有）
 - 檔案：`scripts/ledger.js`（資料層＋雲端同步）、`scripts/ledger-ui.js`（畫面）、`styles/ledger.css`；index.html、shared.js（switchAppView）、stock.js（nav state）有小改。
 - 本機儲存：`HUI_LEDGER_V1`（整包）、`HUI_LEDGER_META_V1`（lastSynced/dirty）、`HUI_LEDGER_PRE_SYNC_BACKUP_V1`（採用雲端前的本機備份）。
@@ -87,12 +99,13 @@
 - 沙盒沒有真的對帳單 PDF，只測過「認不出的檔案」會正確顯示；要用真的對帳單在實際環境試。
 
 ## 風險與未做的建議（未獲同意，不要自己動手）
-- 同網域（wangchiapin.github.io）的網頁共用 localStorage，huimoney 會讀到 All-MoneyBook 的資料，可能互相覆蓋。擁有者用不同瀏覽器開兩個網頁，2026-10-16 決定**先不改**儲存名稱。
+- ~~同網域（wangchiapin.github.io）的網頁共用 localStorage，huimoney 會讀到 All-MoneyBook 的資料~~：**2026-10-19 已解決**，huimoney 的儲存名稱統一加 `HUI_` 前綴，見上面「瀏覽器儲存名稱加前綴」。（2026-10-16 當時先不改，後來 huimoney 接上雲端，登入新帳號時會把本機資料第一次上傳，風險變大，所以改了。）
 - 其他：備份提醒、匯入 JSON 前先詢問、第一次使用導覽、授權與隱私聲明、清掉未使用的 CSS（例如永豐、密碼鎖的樣式）。
 
 ## 以後再跟 All-MoneyBook 同步的做法
 1. 複製 All-MoneyBook 最新版檔案進來（不要 stock-yf.js）。
 2. 照上面 1～8 點重做；可以拿這次的版本跟 All-MoneyBook 比對，差異都集中在上面這些地方。
+3. 保留 `scripts/storage-prefix.js`，且 index.html 裡它要是第一支 script（見「瀏覽器儲存名稱加前綴」）。
 
 ## 退休試算背景
 - 情境：1993 年生、112/7 以後初任、先私校後公立，很可能適用個人專戶制。提撥比例等細節請向學校人事室確認。
