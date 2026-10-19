@@ -583,9 +583,16 @@
         }
       });
 
+      // 銀行對帳單每一筆明細 → 📒 記帳（scripts/stmt-ledger.js）
+      if (typeof stmtLgBuildItems === 'function') stmtLgBuildItems(results, imported);
+
       // 分組：可能已輸入 → 略過；有問題 → 需要你看
       stmtItems.forEach(it => {
         if (it.type === 'info') return;
+        if (it.type === 'ledgerTx') {
+          if (it.failed && it.group !== 'skip') { it.group = 'review'; it.checked = false; it.note = '這份對帳單自我檢查沒通過，請先確認'; }
+          return;
+        }
         if (['sell', 'stockDiv', 'cashDiv', 'holdingFix', 'holdingNew', 'lentShares'].includes(it.type) && stmtIsGone(it.data.name)) {
           it.group = 'skip'; it.checked = false; it.note = '設定成「已經沒有這檔，不用問」'; return;
         }
@@ -895,6 +902,7 @@
               + (sum != null ? `（${same.length} 個帳戶加總：${same.map(x => stmtEsc(String(x.acc.accountNo).slice(-4)) + ' $' + stmtFmt(x.data.value, 0)).join(' ＋ ')}）` : '') : '還沒設定對應'
           };
         }
+        case 'ledgerTx': return stmtLgDescribe(it);
         case 'holdingNew': return {
           tag: '新增持股', title: `${stmtEsc(d.name)}${d.code ? `（${stmtEsc(d.code)}）` : ''}：對帳單 ${stmtFmt(d.shares)} 股，App 沒有這檔`,
           detail: `${stmtEsc(it.account)}・會新增這檔持股${typeof sbGuessCategory === 'function' ? `（${stmtEsc(sbGuessCategory(it.account, d.code))}）` : ''}・成本先填 0，請之後到持股表自己補`
@@ -928,6 +936,7 @@
             ${it.reprocessSid ? `<div style="margin-top:6px;"><button class="stmt-edit-btn" onclick="stmtDoReprocess('${stmtEsc(it.reprocessSid)}')">🔁 重新處理這份（補漏）</button></div>` : ''}
             ${fixHtml}
             ${editHtml}
+            ${typeof stmtLgExtraHtml === 'function' ? stmtLgExtraHtml(it) : ''}
             ${it.flag ? `<div class="stmt-flag-row">⚠️ 待修改，原因（可不填）：<input type="text" value="${stmtEsc(it.flagNote || '')}" placeholder="例如：成本不對" onchange="stmtSetFlagNote(${it.id}, this.value)" /></div>` : ''}
           </div>
           <div class="stmt-item-btns">
@@ -938,8 +947,8 @@
     }
 
     // 每一區裡面照種類排：買進 → 賣出 → 當沖 → 配股 → 現金股利 → 借卷收入 → 出借張數 → 庫存 → 銀行
-    const STMT_KINDS = ['buy', 'sell', 'daytrade', 'stockDiv', 'cashDiv', 'lendIncome', 'lentShares', 'holding', 'yf', 'balance', 'bankref', 'other'];
-    const STMT_KIND_LABEL = { buy: '買進', sell: '賣出', daytrade: '當沖', stockDiv: '配股', cashDiv: '現金股利', lendIncome: '借卷收入', lentShares: '出借張數', holding: '庫存', yf: '媽的永豐', balance: '銀行餘額', bankref: '銀行入帳核對', other: '其他' };
+    const STMT_KINDS = ['buy', 'sell', 'daytrade', 'stockDiv', 'cashDiv', 'lendIncome', 'lentShares', 'holding', 'yf', 'balance', 'ledgerTx', 'bankref', 'other'];
+    const STMT_KIND_LABEL = { buy: '買進', sell: '賣出', daytrade: '當沖', stockDiv: '配股', cashDiv: '現金股利', lendIncome: '借卷收入', lentShares: '出借張數', holding: '庫存', yf: '媽的永豐', balance: '銀行餘額', ledgerTx: '記帳', bankref: '銀行入帳核對', other: '其他' };
     function stmtKindOf(it) {
       if (it.type === 'holdingFix' || it.type === 'holdingNew') return 'holding';
       if (it.type === 'yfBuy' || it.type === 'yfAppCost' || it.yf) return 'yf';
@@ -1037,6 +1046,7 @@
 
       // 備份（復原用）：股票資料＋財務總覽
       const backup = { at: new Date().toISOString(), stock: JSON.parse(JSON.stringify(gatherAllData())), finance: JSON.parse(JSON.stringify(state)) };
+      if (typeof lg !== 'undefined') backup.lg = JSON.parse(JSON.stringify(lg));
       try { localStorage.setItem(STMT_BACKUP_KEY, JSON.stringify(backup)); } catch (e) { /* 太大就只留在記憶體 */ }
       window.__stmtLastBackup = backup;
       recordSnapshot();
@@ -1045,7 +1055,7 @@
       const bump = k => { counts[k] = (counts[k] || 0) + 1; };
       const problems = [];
       // 寫入順序：餘額 → 依日期的買賣／股利／借券（同一天買進、配股先，賣出後）→ 出借張數 → 庫存修正
-      const bucket = { balance: 0, lentShares: 2, holdingFix: 3 };
+      const bucket = { balance: 0, ledgerTx: 0, lentShares: 2, holdingFix: 3 };
       const order = { buy: 1, stockDiv: 2, sell: 3, daytrade: 4, cashDiv: 5, lendIncome: 6 };
       const list = chosen.slice().sort((a, b) => ((bucket[a.type] ?? 1) - (bucket[b.type] ?? 1))
         || String(a.date || '').localeCompare(String(b.date || '')) || ((order[a.type] || 0) - (order[b.type] || 0)));
@@ -1136,6 +1146,8 @@
             if (!h) return;
             sbAdjustHolding(h, d.shares - (Number(h.shares) || 0), 0);
             bump('庫存修正');
+          } else if (it.type === 'ledgerTx') {
+            stmtLgApply(it, bump, problems);
           } else if (it.type === 'balance') {
             const t = stmtBankTarget(it.res, it.acc);
             const item = (state.bankItems || []).find(b => String(b.id) === String(t.financeItemId));
@@ -1168,6 +1180,7 @@
       if (financeChanged) { saveState(); if (typeof render === 'function') render(); }
       renderTabs();
       renderTable();
+      if (typeof lgAfterStmtApply === 'function') lgAfterStmtApply();
 
       stmtDoneInfo = { counts, problems, flagged: list.filter(it => it.flag && STMT_FLAG_TYPES.includes(it.type)).length };
       stmtStep = 'done';
@@ -1204,6 +1217,7 @@
       if (!confirm('確定要復原嗎？股票管理和財務總覽會回到這次匯入前的樣子（匯入之後你自己改的也會一起不見）。')) return;
       applyAllData(backup.stock);
       saveToStorage();
+      if (backup.lg && typeof lgRestoreSnapshot === 'function') lgRestoreSnapshot(backup.lg);
       if (backup.finance) { state = backup.finance; saveState(); if (typeof render === 'function') render(); }
       window.__stmtLastBackup = null;
       try { localStorage.removeItem(STMT_BACKUP_KEY); } catch (e) { /* 略過 */ }

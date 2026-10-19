@@ -32,6 +32,12 @@ const LG_DEFAULT_CATEGORIES = [
   { id: '其他', name: '其他', color: '#8C8474' },
   { id: '公益', name: '公益', color: '#A3352A' }
 ];
+// 付款方式：type = 'cash' 現金、'bank' 轉帳／金融卡（錢直接從銀行帳戶出去）、'card' 信用卡（之後從銀行繳卡費）
+const LG_PAY_TYPES = { cash: '現金', bank: '轉帳／金融卡', card: '信用卡' };
+const LG_DEFAULT_PAY_METHODS = [
+  { id: '現金', name: '現金', type: 'cash' },
+  { id: '轉帳／金融卡', name: '轉帳／金融卡', type: 'bank' }
+];
 const LG_DEFAULT_INCOME_CATEGORIES = [
   { id: '薪資收入', name: '薪資收入', color: '#3F7D5C' },
   { id: '股票獲益', name: '股票獲益', color: '#2F6F62' },
@@ -79,6 +85,18 @@ function lgNormFund(f, category) {
   if (!f || typeof f !== 'object') return null;
   return { payer: f.payer === 'husband' ? 'husband' : 'wife', from: f.from === 'self' ? 'self' : 'fund' };
 }
+// 對帳單配對記號：{ sid: 對帳單編號, key: 對帳單上那一行的識別碼 }；沒配對過是 null
+function lgNormStmt(x) {
+  return x && typeof x === 'object' && x.key ? { sid: String(x.sid || ''), key: String(x.key) } : null;
+}
+function lgNormPayMethods(list) {
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach(m => {
+    if (!m || m.id === undefined || m.id === '' || out.some(x => x.id === String(m.id))) return;
+    out.push({ id: String(m.id), name: String(m.name || m.id), type: LG_PAY_TYPES[m.type] ? m.type : 'bank' });
+  });
+  return out.length ? out : lgClone(LG_DEFAULT_PAY_METHODS);
+}
 function lgNormFundTxn(t) {
   const kinds = ['deposit', 'expense', 'settle', 'opening'];
   return {
@@ -101,15 +119,16 @@ function lgNormalize(d) {
     expenses: arr(d.expenses).filter(e => e && e.id && isDate(e.date)).map(e => Object.assign({}, e, {
       id: String(e.id), date: e.date, category: String(e.category || ''), item: String(e.item || ''),
       price: Number(e.price) || 0, note: String(e.note || ''),
-      payMethod: e.payMethod || '', fund: lgNormFund(e.fund, String(e.category || '')), source: e.source || 'manual'
+      payMethod: e.payMethod || '', fund: lgNormFund(e.fund, String(e.category || '')), source: e.source || 'manual', stmt: lgNormStmt(e.stmt)
     })),
     incomes: arr(d.incomes).filter(i => i && i.id && isDate(i.date)).map(i => Object.assign({}, i, {
       id: String(i.id), date: i.date, category: String(i.category || ''), item: String(i.item || ''),
-      amount: Number(i.amount) || 0, note: String(i.note || ''), source: i.source || 'manual'
+      amount: Number(i.amount) || 0, note: String(i.note || ''), source: i.source || 'manual', stmt: lgNormStmt(i.stmt)
     })),
     categories: cats.length ? cats : lgClone(LG_DEFAULT_CATEGORIES),
     incomeCategories: incCats.length ? incCats : lgClone(LG_DEFAULT_INCOME_CATEGORIES),
     monthlyNotes: arr(d.monthlyNotes).filter(n => n && n.id && n.month && typeof n.text === 'string').map(n => ({ id: String(n.id), month: String(n.month), text: n.text, createdAt: Number(n.createdAt) || 0 })),
+    payMethods: lgNormPayMethods(d.payMethods),
     quickNoteDraft: typeof d.quickNoteDraft === 'string' ? d.quickNoteDraft : '',
     fundTxns: arr(d.fundTxns).filter(t => t && t.id && isDate(t.date)).map(lgNormFundTxn),
     updatedAt: typeof d.updatedAt === 'string' ? d.updatedAt : ''
@@ -231,6 +250,47 @@ function lgDeleteCategory(kind, id) {
   if (idx >= 0) list.splice(idx, 1);
   lgSave();
   return '';
+}
+
+/* ---------------- 付款方式 ---------------- */
+function lgPayMap() { return Object.fromEntries(lg.payMethods.map(m => [m.id, m])); }
+function lgPayName(id) { const m = lgPayMap()[id]; return m ? m.name : (id || ''); }
+function lgPayType(id) { const m = lgPayMap()[id]; return m ? m.type : ''; }
+function lgPayUsed(id) { return lg.expenses.some(e => e.payMethod === id); }
+function lgAddPayMethod(name, type) {
+  const n = String(name || '').trim();
+  if (!n || lg.payMethods.some(m => m.id === n || m.name === n)) return false;
+  lg.payMethods.push({ id: n, name: n, type: LG_PAY_TYPES[type] ? type : 'card' });
+  lgSave();
+  return true;
+}
+function lgRenamePayMethod(id, name) {
+  const n = String(name || '').trim();
+  if (!n) return;
+  lg.payMethods.forEach(m => { if (m.id === id) m.name = n; });
+  lgSave();
+}
+function lgSetPayType(id, type) {
+  if (!LG_PAY_TYPES[type]) return;
+  lg.payMethods.forEach(m => { if (m.id === id) m.type = type; });
+  lgSave();
+}
+// 回傳 '' 表示刪掉了，否則回傳不能刪的原因
+function lgDeletePayMethod(id) {
+  if (lg.payMethods.length <= 1) return '至少要留一個付款方式';
+  if (lgPayUsed(id)) return '已有支出使用這個付款方式，不能刪除';
+  lg.payMethods = lg.payMethods.filter(m => m.id !== id);
+  lgSave();
+  return '';
+}
+// 這一行對帳單明細已經記過／配對過了嗎
+function lgStmtKeyUsed(key) {
+  return lg.expenses.some(e => e.stmt && e.stmt.key === key) || lg.incomes.some(i => i.stmt && i.stmt.key === key);
+}
+// 沒有這個分類就補一個（對帳單匯入用）
+function lgEnsureCategory(kind, id, color) {
+  if (!id) return;
+  if (!lgCatList(kind).some(c => c.id === id)) { lgCatList(kind).push({ id, name: id, color: color || '#8C8474' }); }
 }
 
 /* ---------------- 每月統計 ---------------- */
@@ -359,6 +419,7 @@ function lgImportRecords(rec) {
   plan(rec.notes, new Set(lg.monthlyNotes.map(n => n.id)), new Set(lg.monthlyNotes.map(sigN)), sigN, oneN, n => { lg.monthlyNotes.push(n); res.notes++; });
   lg.expenses.forEach(e => { if (e.category && !lg.categories.some(c => c.id === e.category)) { lg.categories.push({ id: e.category, name: e.category, color: '#8C8474' }); res.categories++; } });
   lg.incomes.forEach(i => { if (i.category && !lg.incomeCategories.some(c => c.id === i.category)) { lg.incomeCategories.push({ id: i.category, name: i.category, color: '#8C8474' }); res.categories++; } });
+  lg.expenses.forEach(e => { if (e.payMethod && !lg.payMethods.some(m => m.id === e.payMethod)) lg.payMethods.push({ id: e.payMethod, name: e.payMethod, type: 'bank' }); });
   lgSave();
   return res;
 }
@@ -392,6 +453,8 @@ function lgImportJsonText(text) {
   inc.incomes.forEach(i => { if (!haveI.has(i.id)) { lg.incomes.push(i); res.incomes++; } });
   inc.monthlyNotes.forEach(n => { if (!haveN.has(n.id)) { lg.monthlyNotes.push(n); res.notes++; } });
   inc.fundTxns.forEach(t => { if (!haveF.has(t.id)) { lg.fundTxns.push(t); res.fundTxns++; } });
+  if (Array.isArray(raw.payMethods)) inc.payMethods.forEach(m => { if (!lg.payMethods.some(x => x.id === m.id)) { lg.payMethods.push(m); res.categories++; } });
+  lg.expenses.forEach(e => { if (e.payMethod && !lg.payMethods.some(m => m.id === e.payMethod)) lg.payMethods.push({ id: e.payMethod, name: e.payMethod, type: 'bank' }); });
   if (Array.isArray(raw.categories)) inc.categories.forEach(c => { if (!lg.categories.some(x => x.id === c.id)) { lg.categories.push(c); res.categories++; } });
   if (Array.isArray(raw.incomeCategories)) inc.incomeCategories.forEach(c => { if (!lg.incomeCategories.some(x => x.id === c.id)) { lg.incomeCategories.push(c); res.categories++; } });
   // 匯入的紀錄用到、但分類清單裡沒有的分類，補進來，避免統計對不起來

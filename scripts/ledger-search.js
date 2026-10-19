@@ -15,7 +15,7 @@ function lgSearchPool() {
   lg.expenses.forEach(e => {
     const cat = eMap[e.category] || lgFallbackCat(e.category);
     const fundRel = e.category === LG_FUND_CATEGORY_ID || !!e.fund;
-    pool.push({ src: 'expense', id: e.id, date: e.date, name: e.item || cat.name, catName: cat.name, catKey: 'e:' + e.category, color: cat.color, amount: Number(e.price) || 0, note: e.note, kind: 'expense', fundRel, tag: lgFundTagHtml(e, true) });
+    pool.push({ src: 'expense', id: e.id, date: e.date, name: e.item || cat.name, catName: cat.name, catKey: 'e:' + e.category, color: cat.color, amount: Number(e.price) || 0, note: e.note, payName: e.payMethod ? lgPayName(e.payMethod) : '', kind: 'expense', fundRel, tag: lgFundTagHtml(e, true) });
   });
   lg.incomes.forEach(i => {
     const cat = iMap[i.category] || lgFallbackCat(i.category);
@@ -41,7 +41,7 @@ function lgSearchFilter() {
     if (q.to && r.date > q.to) return false;
     if (min !== null && r.amount < min) return false;
     if (max !== null && r.amount > max) return false;
-    if (kw && !`${r.name} ${r.note} ${r.catName} ${r.amount}`.toLowerCase().includes(kw)) return false;
+    if (kw && !`${r.name} ${r.note} ${r.catName} ${r.amount} ${r.payName || ''}`.toLowerCase().includes(kw)) return false;
     return true;
   }).sort((a, b) => (a.date === b.date ? String(b.id).localeCompare(String(a.id)) : (a.date < b.date ? 1 : -1)));
 }

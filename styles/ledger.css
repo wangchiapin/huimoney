@@ -225,3 +225,7 @@
   #ledgerView .lg-srch-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   #ledgerView .lg-bar-row { grid-template-columns: 70px 1fr 64px; gap: 6px; font-size: 0.8rem; }
 }
+
+#ledgerView .lg-tag.pay, #fundView .lg-tag.pay { background: #e6eef7; color: #3f5f86; }
+#ledgerView .lg-tag.ok, #fundView .lg-tag.ok { background: #dff0e2; color: #3a7a4a; }
+.lg-pay-type { width: auto; flex: none; }

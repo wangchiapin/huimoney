@@ -14,6 +14,14 @@ const LG_XL_KIND_REV = Object.fromEntries(Object.entries(LG_XL_KIND).map(([k, v]
 const LG_XL_WHO = { wife: '老婆', husband: '老公' };
 const LG_XL_WHO_REV = { 老婆: 'wife', 老公: 'husband' };
 
+// 付款方式名稱 → id（沒有這個名稱就先當新的付款方式，匯入時會補進清單）
+function lgPayIdByName(name) {
+  const n = String(name || '').trim();
+  if (!n) return '';
+  const m = lg.payMethods.find(x => x.name === n) || lg.payMethods.find(x => x.id === n);
+  return m ? m.id : n;
+}
+
 function lgXlStyleSheet(ws, widths) {
   ws.columns.forEach((c, i) => { c.width = widths[i] || 14; });
   const head = ws.getRow(1);
@@ -32,12 +40,12 @@ async function lgExportXlsx() {
     wb.created = new Date();
 
     const wsE = wb.addWorksheet('支出');
-    wsE.addRow(['編號', '日期', '分類', '項目', '金額', '備註', '共同基金支出', '付款人', '錢從哪來']);
+    wsE.addRow(['編號', '日期', '分類', '項目', '金額', '備註', '共同基金支出', '付款人', '錢從哪來', '付款方式']);
     lg.expenses.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).forEach(e => {
       wsE.addRow([e.id, e.date, (eMap[e.category] || { name: e.category }).name, e.item, e.price, e.note,
-        e.fund ? '是' : '', e.fund ? LG_XL_WHO[e.fund.payer] : '', e.fund ? (e.fund.from === 'self' ? '個人先墊' : '基金帳戶直接付') : '']);
+        e.fund ? '是' : '', e.fund ? LG_XL_WHO[e.fund.payer] : '', e.fund ? (e.fund.from === 'self' ? '個人先墊' : '基金帳戶直接付') : '', e.payMethod ? lgPayName(e.payMethod) : '']);
     });
-    lgXlStyleSheet(wsE, [18, 12, 12, 24, 12, 24, 14, 10, 16]);
+    lgXlStyleSheet(wsE, [18, 12, 12, 24, 12, 24, 14, 10, 16, 16]);
     wsE.getColumn(5).numFmt = '#,##0';
 
     const wsI = wb.addWorksheet('收入');
@@ -137,6 +145,7 @@ function lgXlParseWorkbook(wb) {
     rec.expenses.push({
       id: lgXlText(r['編號']), date, category: lgCatIdByName('expense', lgXlText(r['分類'])), item: lgXlText(r['項目']), price, note: lgXlText(r['備註']),
       fund: fundOn ? { payer: LG_XL_WHO_REV[lgXlText(r['付款人'])] || 'wife', from: lgXlText(r['錢從哪來']) === '個人先墊' ? 'self' : 'fund' } : null,
+      payMethod: lgPayIdByName(lgXlText(r['付款方式'])),
       source: 'excel'
     });
   });

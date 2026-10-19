@@ -16,8 +16,9 @@ let lgNoteEditText = '';
 let lgNoteConfirmId = '';
 let lgSheet = null;               // 新增／修改視窗的狀態 { kind, id, category, fund }
 let lgLastCat = { expense: '', income: '' };
+let lgLastPay = '';
 let lgPickYear = 0;
-let lgSettingsTab = 'expense';    // 'expense' | 'income' | 'backup'
+let lgSettingsTab = 'expense';    // 'expense' | 'income' | 'pay' | 'backup'
 let lgClearArmed = false;
 
 function lgEsc(v) {
@@ -147,11 +148,18 @@ function lgEntryListHtml(kind) {
 }
 
 // 基金相關的小標籤：基金支出（誰付、錢從哪來）、共同基金匯入
+function lgPayTagHtml(it) {
+  if (!it.payMethod) return '';
+  const t = lgPayType(it.payMethod);
+  return ` <span class="lg-tag pay">${t === 'card' ? '💳' : (t === 'cash' ? '💵' : '🏦')} ${lgEsc(lgPayName(it.payMethod))}</span>`;
+}
+function lgStmtTagHtml(it) { return it.stmt ? ' <span class="lg-tag ok" title="已和銀行對帳單對上">✓ 已對帳</span>' : ''; }
 function lgFundTagHtml(it, isExp) {
-  if (!isExp) return '';
-  if (it.category === LG_FUND_CATEGORY_ID) return ' <span class="lg-tag">🏦 基金匯入</span>';
-  if (it.fund) return ` <span class="lg-tag">🏦 ${it.fund.from === 'fund' ? '基金付' : LG_WHO_LABEL[it.fund.payer] + '先墊'}・不算個人</span>`;
-  return '';
+  if (!isExp) return lgStmtTagHtml(it);
+  const base = lgPayTagHtml(it) + lgStmtTagHtml(it);
+  if (it.category === LG_FUND_CATEGORY_ID) return base + ' <span class="lg-tag">🏦 基金匯入</span>';
+  if (it.fund) return base + ` <span class="lg-tag">🏦 ${it.fund.from === 'fund' ? '基金付' : LG_WHO_LABEL[it.fund.payer] + '先墊'}・不算個人</span>`;
+  return base;
 }
 function lgRowClick(el) {
   if (lgConfirmKey) { lgConfirmKey = ''; renderLedger(); return; }
@@ -374,7 +382,7 @@ function lgOpenSheet(kind, id) {
   const today = lgTodayISO();
   const date = existing ? existing.date : (lgMonthKeyOf(today) === lgViewMonth ? today : `${lgViewMonth}-01`);
   let category = existing ? existing.category : (cats.some(c => c.id === lgLastCat[kind]) ? lgLastCat[kind] : (cats[0] ? cats[0].id : ''));
-  lgSheet = { kind, id: existing ? existing.id : '', category, fund: (isExp && existing && existing.fund) ? Object.assign({}, existing.fund) : null };
+  lgSheet = { kind, id: existing ? existing.id : '', category, fund: (isExp && existing && existing.fund) ? Object.assign({}, existing.fund) : null, payMethod: isExp ? (existing ? existing.payMethod || '' : (lg.payMethods.some(m => m.id === lgLastPay) ? lgLastPay : '')) : '' };
   const amount = existing ? (isExp ? existing.price : existing.amount) : '';
   const title = existing ? (isExp ? '修改這筆支出' : '修改這筆收入') : (isExp ? '新增一筆支出' : '新增一筆收入');
   const submitLabel = existing ? (isExp ? '更新這筆支出' : '更新這筆收入') : (isExp ? '記一筆支出' : '記一筆收入');
@@ -393,6 +401,7 @@ function lgOpenSheet(kind, id) {
         <label class="lg-label">分類</label>
         <div class="lg-chips" id="lgFChips">${chips}</div>
         ${isExp ? '<div id="lgFundBox"></div>' : ''}
+        ${isExp ? '<label class="lg-label">付款方式（選填）</label><div class="lg-chips" id="lgPayChips"></div>' : ''}
         <label class="lg-label">${isExp ? '項目' : '項目（選填）'}</label>
         <input type="text" id="lgFItem" class="lg-input" placeholder="${isExp ? '例如：晚餐、捷運、咖啡' : '例如：10月薪資'}" value="${lgEsc(existing ? existing.item : '')}">
         <label class="lg-label">金額</label>
@@ -402,7 +411,7 @@ function lgOpenSheet(kind, id) {
         <button type="button" class="lg-submit ${isExp ? 'out' : 'in'}" onclick="lgSubmitSheet()">${submitLabel}</button>
       </div>
     </div>`;
-  if (isExp) lgRenderFundBox();
+  if (isExp) { lgRenderFundBox(); lgRenderPayChips(); }
   ['lgFItem', 'lgFAmount', 'lgFNote'].forEach(fid => {
     const el = document.getElementById(fid);
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') lgSubmitSheet(); });
@@ -410,6 +419,15 @@ function lgOpenSheet(kind, id) {
   const first = document.getElementById(existing ? 'lgFItem' : 'lgFAmount');
   if (first && !(window.matchMedia && window.matchMedia('(max-width: 760px)').matches)) first.focus();
 }
+function lgRenderPayChips() {
+  const box = document.getElementById('lgPayChips');
+  if (!box || !lgSheet) return;
+  const none = `<button type="button" class="lg-chip ${lgSheet.payMethod === '' ? 'active' : ''}" onclick="lgPickPay('')">不指定</button>`;
+  const unknown = lgSheet.payMethod && !lg.payMethods.some(m => m.id === lgSheet.payMethod) ? [{ id: lgSheet.payMethod, name: lgSheet.payMethod, type: 'bank' }] : [];
+  box.innerHTML = none + lg.payMethods.concat(unknown).map(m => `
+    <button type="button" class="lg-chip ${m.id === lgSheet.payMethod ? 'active' : ''}" data-pay="${lgEsc(m.id)}" onclick="lgPickPay(this.dataset.pay)">${m.type === 'card' ? '💳' : (m.type === 'cash' ? '💵' : '🏦')} ${lgEsc(m.name)}</button>`).join('');
+}
+function lgPickPay(id) { if (!lgSheet) return; lgSheet.payMethod = id; lgRenderPayChips(); }
 function lgPickCategory(btn) {
   if (!lgSheet) return;
   lgSheet.category = btn.dataset.cat;
@@ -453,10 +471,11 @@ function lgSubmitSheet() {
   const item = document.getElementById('lgFItem').value.trim();
   const note = document.getElementById('lgFNote').value.trim();
   const fund = (isExp && category !== LG_FUND_CATEGORY_ID && lgSheet.fund) ? { payer: lgSheet.fund.payer, from: lgSheet.fund.from } : null;
-  const entry = isExp ? { date, category, item, price: num, note, fund } : { date, category, item, amount: num, note };
+  const entry = isExp ? { date, category, item, price: num, note, fund, payMethod: lgSheet.payMethod || '' } : { date, category, item, amount: num, note };
   if (id) { if (isExp) lgUpdateExpense(id, entry); else lgUpdateIncome(id, entry); }
   else { if (isExp) lgAddExpense(entry); else lgAddIncome(entry); }
   lgLastCat[kind] = category;
+  if (isExp) lgLastPay = lgSheet.payMethod || '';
   lgCloseOverlay();
   if (typeof lgAfterLedgerChange === 'function') lgAfterLedgerChange();
   if (lgMonthKeyOf(date) !== lgViewMonth) {
@@ -476,9 +495,10 @@ function lgOpenSettings(tab) {
 }
 function lgSetSettingsTab(t) { lgSettingsTab = t; lgClearArmed = false; lgRenderSettings(); }
 function lgRenderSettings() {
-  const tabs = [['expense', '支出分類'], ['income', '收入分類'], ['backup', '備份']];
+  const tabs = [['expense', '支出分類'], ['income', '收入分類'], ['pay', '付款方式'], ['backup', '備份']];
   let body = '';
   if (lgSettingsTab === 'backup') body = lgBackupHtml();
+  else if (lgSettingsTab === 'pay') body = lgPayManagerHtml();
   else body = lgCategoryManagerHtml(lgSettingsTab);
   lgOverlayRoot().innerHTML = `
     <div class="lg-overlay" onclick="lgCloseOverlay(); renderLedger();">
@@ -506,6 +526,32 @@ function lgCategoryManagerHtml(kind) {
       <input type="text" id="lgNewCatName" class="lg-input slim" placeholder="新分類名稱" onkeydown="if(event.key==='Enter')lgOnAddCat('${kind}')">
       <button type="button" class="lg-add-btn out" onclick="lgOnAddCat('${kind}')">＋</button>
     </div>`;
+}
+function lgPayManagerHtml() {
+  const typeSel = (cur, extra) => `<select class="lg-input slim lg-pay-type" ${extra}>${Object.keys(LG_PAY_TYPES).map(k => `<option value="${k}" ${k === cur ? 'selected' : ''}>${LG_PAY_TYPES[k]}</option>`).join('')}</select>`;
+  const rows = lg.payMethods.map(m => `
+    <div class="lg-catman-row" data-id="${lgEsc(m.id)}">
+      <input type="text" class="lg-input slim" value="${lgEsc(m.name)}" onchange="lgOnRenamePay(this)">
+      ${typeSel(m.type, 'onchange="lgOnPayType(this)"')}
+      <button type="button" class="lg-mini dim" onclick="lgOnDeletePay(this.parentNode.dataset.id)" aria-label="刪除">🗑</button>
+    </div>`).join('');
+  return `
+    <div class="lg-hint">在這裡增減付款方式，例如「富邦 Costco 卡」「國泰 CUBE 卡」。<b>信用卡</b>是之後從銀行繳卡費的；<b>轉帳／金融卡</b>是錢直接從銀行帳戶出去的（銀行對帳單只會和這種、或沒指定的紀錄比對）；<b>現金</b>不會和銀行對帳單比對。已經有支出使用的付款方式不能刪除。</div>
+    ${rows}
+    <div class="lg-catman-row add">
+      <input type="text" id="lgNewPayName" class="lg-input slim" placeholder="新增付款方式，例如：富邦信用卡" onkeydown="if(event.key==='Enter')lgOnAddPay()">
+      ${typeSel('card', 'id="lgNewPayType"')}
+      <button type="button" class="lg-add-btn out" onclick="lgOnAddPay()">＋</button>
+    </div>`;
+}
+function lgOnRenamePay(inp) { const id = inp.parentNode.dataset.id; if (!inp.value.trim()) { lgRenderSettings(); return; } lgRenamePayMethod(id, inp.value); }
+function lgOnPayType(sel) { lgSetPayType(sel.parentNode.dataset.id, sel.value); }
+function lgOnDeletePay(id) { const why = lgDeletePayMethod(id); if (why) lgToast(why, 'error'); lgRenderSettings(); }
+function lgOnAddPay() {
+  const name = document.getElementById('lgNewPayName').value;
+  if (!name.trim()) return;
+  if (!lgAddPayMethod(name, document.getElementById('lgNewPayType').value)) lgToast('已經有同名的付款方式了', 'error');
+  lgRenderSettings();
 }
 function lgOnRenameCat(inp) {
   const row = inp.parentNode;
