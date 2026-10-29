@@ -54,3 +54,8 @@ Settings → Pages → Source 選 `main` 分支、根目錄 `/`，儲存後即�
 - 開網頁時如果有「新的一天」的匯率會自動套用；同一天只套用一次，所以自己在標題列改的匯率會用到下次有新匯率為止。
 - 美股要追蹤哪些代號，請編輯 `data/us-symbols.txt`。
 - 首次使用請到 Settings → Actions → General，把 Workflow permissions 設為「Read and write permissions」。
+
+## Google 試算表同步與每週資產週報（`apps-script/`）
+- `huimoney-sync.gs`：每天把雲端資料（財務總覽、股票、保險、全部資產一覽、記帳）同步到 Google 試算表，選用另存 JSON 備份。
+- `weekly-report.gs`：每週日晚上 8 點（台北時間）寄「全部資產一覽」週報。收件人不寫在程式裡（倉庫是公開的），要到 Apps Script「專案設定 → 指令碼屬性」新增 `REPORT_EMAIL`，沒設會停下來提醒。
+- 這兩支只是存檔備份，要貼到 Apps Script 才會生效；詳細設定與「改了哪些欄位就要同步改腳本」見 `apps-script/README.md`。
