@@ -82,6 +82,7 @@
         <button class="settings-menu-item" onclick="addItem('baddebt'); closeSettingsMenu();">➕ 新增呆帳項目</button>
         <div class="settings-menu-divider"></div>
         <button class="settings-menu-item" onclick="openArchiveManager();">🗄️ 封存管理</button>
+        <button class="settings-menu-item" id="stmtLogBtn" onclick="closeSettingsMenu(); openStmtLog();">🧾 對帳單匯入紀錄</button>
         <div class="settings-menu-divider"></div>
         <button class="settings-menu-item" onclick="exportData(); closeSettingsMenu();">💾 匯出備份 (JSON - 全部資料)</button>
         <button class="settings-menu-item" onclick="document.getElementById('fileInput').click(); closeSettingsMenu();">📂 匯入備份 (JSON)</button>
@@ -209,6 +210,7 @@
             <input type="file" onchange="importStockData(event)" accept=".json" style="display:none;" />
           </label>
           <button onclick="triggerExcelImport()">🗂️ 匯入備份 (Excel)</button>
+          <button onclick="openStmtLog()">🧾 對帳單匯入紀錄</button>
           <input type="file" id="excelImportFileInput" onchange="handleExcelImportFile(event)" accept=".xlsx" style="display:none;" />
         </div>
       </div>

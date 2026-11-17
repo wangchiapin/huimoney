@@ -421,6 +421,9 @@
       });
     }
 
+    // 新增日期欄時各列的起始值：「股票投資損益」要留空（留空才會自動以現值－成本計算），其他列填 0
+    function newColumnStartValue(key) { return /_profit$/.test(key) ? '' : 0; }
+
     function addColumn() {
       const newDate = prompt("請輸入新增紀錄日期 (例如: 1150401):", "");
       if (!newDate) return;
@@ -430,7 +433,7 @@
       state.colNotes.push('');
 
       Object.keys(state.values).forEach(k => {
-        state.values[k].push(0);
+        state.values[k].push(newColumnStartValue(k));
       });
       sortColumnsByDate();
       saveState();
@@ -1102,6 +1105,8 @@
 
     container.addEventListener('keydown', (e) => {
       if (selection.isEditing) return;
+      // 在表頭日期、項目名稱這類輸入框裡打字時，不要當成表格的快速鍵（否則數字、Backspace、Enter 都會被吃掉）
+      if (e.target && e.target !== container && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
 
       if (e.key === 'ArrowUp') {
         e.preventDefault();
